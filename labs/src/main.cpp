@@ -1,6 +1,6 @@
 #include "app.h"
-int main()
-{
+
+int main() {
     app::run();
     return 0;
 }

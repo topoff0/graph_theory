@@ -1,28 +1,15 @@
 #pragma once
-#include "io.h"
 
-class app
-{
-private:
-    static const vector<pair<string, COLOR>> main_menu_items;
-    static const vector<pair<string, COLOR>> main_menu_exit_items;
-    static const vector<pair<string, COLOR>> exit_items;
-    static const vector<pair<string, COLOR>> universe_creation_items;
-    static const vector<pair<string, COLOR>> multiset_creation_items;
-    static const vector<pair<string, COLOR>> operation_items;
+class app {
+  public:
+    static void run();
 
+  private:
     static bool _running;
     static bool _back;
 
-    // === Process commands ===
-    static void process_main_menu(const int choice);
+    static void start();
 
-    class MainMenu
-    {
-    public:
-        static void start();
-    };
-
-public:
-    static void run();
+    static void handle_main_menu(int choice);
+    static void handle_start_work_menu(int choice);
 };

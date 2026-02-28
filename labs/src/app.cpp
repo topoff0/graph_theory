@@ -1,48 +1,61 @@
 #include "app.h"
-#include "menu.h"
-
-const std::vector<std::pair<std::string, COLOR>> app::main_menu_items = {
-    {"Начать работу", BASE}};
-
-const std::vector<std::pair<std::string, COLOR>> app::main_menu_exit_items = {
-    {"Завершить работу", RED}};
-
-const std::vector<std::pair<std::string, COLOR>> app::exit_items = {
-    {"Вернуться в главное меню", RED}, {"Завершить работу", RED}};
+#include "menu_.h"
+#include "menu_func.h"
 
 bool app::_running = true;
 bool app::_back = false;
 
 void app::run() {
-  io::print_header("Лабораторная работа №1. Теория графов.", HEADER_STYLE::SIMPLE);
-  io::v_space(1);
+    io::print_header("Курсовая работа. Калькулятор <Z; +, *>.",
+                     HEADER_STYLE::SIMPLE);
+    io::v_space(1);
 
-  Menu main_menu("Главное меню");
+    menu main_menu("Главное меню");
 
-  while (_running) {
-    _back = false;
-    main_menu.show(main_menu_items, main_menu_exit_items, "Список команд");
-    int choice =
-        io::read_number(-(main_menu_exit_items.size() - 1),
-                        main_menu_items.size(), "Введите номер команды");
-    process_main_menu(choice);
-  }
-  io::print_header("Программа завершила свою работу", BOLD, GREEN);
+    while (_running) {
+        _back = false;
+        main_menu.show(MAIN_MENU, "Список команд");
+        int choice = io::read_number(menu_min_max_id(MAIN_MENU),
+                                     "Введите номер команды");
+        handle_main_menu(choice);
+    }
+    io::print_header("Программа завершила свою работу", BOLD, GREEN);
 }
 
-void app::process_main_menu(const int choice) {
-  switch (choice) {
-  case 0:
-    _running = false;
-    break;
-  case 1:
-    app::MainMenu::start();
-    break;
-
-  default:
-    break;
-  }
+void app::start() {
+    while (_running && !_back) {
+        menu start_work_menu("Стартовое меню");
+        start_work_menu.show(START_WORK_MENU, "Список команд");
+        int choice = io::read_number(menu_min_max_id(START_WORK_MENU),
+                                     "Введите номер команды");
+        handle_start_work_menu(choice);
+    }
 }
 
-void app::MainMenu::start() {}
+void app::handle_main_menu(int choice) {
+    switch (choice) {
+    case 0:
+        _running = false;
+        break;
+    case 1:
+        start();
+        break;
 
+    default:
+        break;
+    }
+}
+
+void app::handle_start_work_menu(int choice) {
+    switch (choice) {
+    case -1:
+        menu_func::back_to_main_menu(_back);
+        break;
+    case 0:
+        _running = false;
+        break;
+
+    default:
+        break;
+    }
+}
