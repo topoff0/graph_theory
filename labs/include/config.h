@@ -7,8 +7,17 @@
 #define UI_LIST_LEFT_PADDING 2
 #define UI_TABLE_WIDTH 60
 
-// === TEXT Format ===
+// === TEXT FORMAT ===
 #define MAX_LINE_LENGTH 70
+
+
+// === DISTRIBUTION PARAMETERS ===
+// из справочника
+// #define MU 4 // центр распределения
+// #define ALPHA 1.57 // мастаб (крутизна) распределения
+
+#define MU 3 // центр распределения
+#define ALPHA 3.5 // мастаб (крутизна) распределения
 
 // === CONSTANT WORDS ===
 #define ERROR_WORD "ОШИБКА"

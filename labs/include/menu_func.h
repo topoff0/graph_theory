@@ -1,9 +1,9 @@
 struct menu_func {
-    struct MainMenu {};
+    struct MainMenu {
+        static void test_distribution();
+    };
 
     struct StartWorkMenu {};
-
-    struct CalculatorMenu {};
 
     static void back_to_main_menu(bool &back);
 };
