@@ -7,7 +7,6 @@
 #include "matrix.h"
 #include <cstdlib>
 #include <ctime>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -66,7 +65,7 @@ void menu_func::StartWorkMenu::generate_graph() {
     if (sum_deg < 2 * (int(n - 1))) {
         int diff = 2 * (int(n - 1)) - sum_deg;
         for (size_t i = 0; diff > 0; ++i, --diff) {
-            degrees[(i * i) % n] += 1;
+            degrees[i % n] += 1;
         }
     } else if (sum_deg > 2 * (int(n - 1))) {
         int diff = sum_deg - 2 * (int(n - 1));
@@ -124,6 +123,12 @@ void menu_func::StartWorkMenu::calc_diameter() {
         return;
     }
     // TODO: Сделать расчет диметральных вершин
+}
+
+void menu_func::StartWorkMenu::make_graph_acyclic() {
+}
+
+void menu_func::StartWorkMenu::make_graph_oriented() {
 }
 
 void menu_func::StartWorkMenu::run_shimbell() {}

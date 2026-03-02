@@ -63,12 +63,18 @@ void app::handle_start_work_menu(int choice) {
         menu_func::StartWorkMenu::generate_graph();
         break;
     case 2:
-        menu_func::StartWorkMenu::calc_eccentricities();
+        menu_func::StartWorkMenu::make_graph_acyclic();
         break;
     case 3:
-        menu_func::StartWorkMenu::calc_centers();
+        menu_func::StartWorkMenu::make_graph_oriented();
         break;
     case 4:
+        menu_func::StartWorkMenu::calc_eccentricities();
+        break;
+    case 5:
+        menu_func::StartWorkMenu::calc_centers();
+        break;
+    case 6:
         menu_func::StartWorkMenu::calc_diameter();
         break;
 
