@@ -292,6 +292,88 @@ void io::print_text_with_header(const string &text, const string &header,
     cout << reset_color;
 }
 
+void io::print_matrix(const Matrix &mat, const string &header, COLOR clr) {
+    size_t rows = mat.get_rows();
+    size_t cols = mat.get_cols();
+    if (rows == 0 || cols == 0)
+        return;
+
+    const string padding = "  ";
+
+    size_t cell_width = 1;
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < cols; ++j) {
+            double val = mat.at(i, j);
+            string s;
+            if (val == static_cast<int>(val))
+                s = std::to_string(static_cast<int>(val));
+            else {
+                char buffer[32];
+                snprintf(buffer, sizeof(buffer), "%.1f", val);
+                s = buffer;
+            }
+            if (s.length() > cell_width)
+                cell_width = s.length();
+        }
+    }
+
+    size_t table_width = cols * (cell_width + 3) + 1;
+    size_t margin_size = 0;
+
+    if (UI_HEADER_LENGTH > table_width)
+        margin_size = (UI_HEADER_LENGTH - table_width) / 2;
+
+    string margin(margin_size, ' ');
+
+    io::print_header(header, BOXED, clr);
+
+    cout << margin << get_color_code(clr) << "╭";
+    for (size_t j = 0; j < cols; ++j) {
+        cout << get_border(cell_width + 2, "─");
+        cout << (j == cols - 1 ? "╮" : "┬");
+    }
+    cout << "\n";
+
+    for (size_t i = 0; i < rows; ++i) {
+        cout << margin << "│";
+        for (size_t j = 0; j < cols; ++j) {
+            double val = mat.at(i, j);
+            string s;
+            if (val == static_cast<int>(val))
+                s = std::to_string(static_cast<int>(val));
+            else {
+                char buffer[32];
+                snprintf(buffer, sizeof(buffer), "%.1f", val);
+                s = buffer;
+            }
+
+            size_t padding = cell_width - s.length();
+            size_t pad_left = padding / 2;
+            size_t pad_right = padding - pad_left;
+
+            cout << " " << string(pad_left, ' ') << get_color_code(BASE) << s
+                 << get_color_code(clr) << string(pad_right, ' ') << " │";
+        }
+        cout << "\n";
+
+        if (i != rows - 1) {
+            cout << margin << "├";
+            for (size_t j = 0; j < cols; ++j) {
+                cout << get_border(cell_width + 2, "─");
+                cout << (j == cols - 1 ? "┤" : "┼");
+            }
+            cout << "\n";
+        }
+    }
+
+    cout << margin << "╰";
+    for (size_t j = 0; j < cols; ++j) {
+        cout << get_border(cell_width + 2, "─");
+        cout << (j == cols - 1 ? "╯" : "┴");
+    }
+    cout << "\n" << reset_color;
+}
+
 void io::print_error(const string &message, COLOR clr) {
     // Header
     int len = format::count_visible_chars(ERROR_WORD);

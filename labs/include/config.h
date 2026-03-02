@@ -21,3 +21,5 @@
 
 // === CONSTANT WORDS ===
 #define ERROR_WORD "ОШИБКА"
+
+#define DEBUG true

@@ -1,5 +1,6 @@
 #pragma once
 #include "colors.h"
+#include "matrix.h"
 #include "menu_item.h"
 
 #include <string>
@@ -44,6 +45,10 @@ class io {
                                        const string &link = "",
                                        HEADER_STYLE style = BOXED,
                                        COLOR color = BASE);
+
+    // === Current lab ===
+    static void print_matrix(const Matrix &mat, const std::string &header = "",
+                             COLOR clr = BASE);
 
     // === Error ===
     static void print_error(const string &message, COLOR clr = RED);
