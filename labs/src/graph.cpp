@@ -1,57 +1,118 @@
 #include "graph.h"
-#include <queue>
-using std::pair;
+#include "config.h"
+#include "io.h"
+#include <algorithm>
 
 graph::graph(size_t vertices) : n(vertices), adj(vertices, vertices) {}
 
 void graph::generate(const vector<int> &degrees) {
-    std::vector<std::pair<int, size_t>> vertices;
-    for (size_t i = 0; i < n; ++i) {
-        std::pair<int, size_t> p;
-        p.first = degrees[i];
-        p.second = i;
-        vertices.push_back(p);
-    }
+    vector<int> deg = get_correct_degrees_for_connected_graph(degrees);
+
+    vector<int> remaining = deg;
 
     while (true) {
-        for (size_t i = 0; i < vertices.size(); ++i) {
-            size_t max_idx = i;
-            for (size_t j = i + 1; j < vertices.size(); ++j) {
-                if (vertices[j].first > vertices[max_idx].first) {
-                    max_idx = j;
-                }
-            }
-            if (max_idx != i) {
-                std::pair<int, size_t> tmp = vertices[i];
-                vertices[i] = vertices[max_idx];
-                vertices[max_idx] = tmp;
-            }
-        }
+        int u = -1, v = -1;
 
-        while (!vertices.empty() && vertices.back().first == 0) {
-            vertices.pop_back();
-        }
+        for (int i = 0; i < n; i++)
+            if (remaining[i] > 0)
+                u = i;
 
-        if (vertices.empty()) {
+        if (u == -1)
             break;
+
+        for (int j = 0; j < n; j++) {
+            if (j != u && remaining[j] > 0 && adj.at(u, j) == 0) {
+                v = j;
+                break;
+            }
         }
 
-        int d = vertices[0].first;
-        size_t v_idx = vertices[0].second;
+        if (v == -1)
+            break;
 
-        for (int i = 1; i <= d; ++i) {
-            int u_deg = vertices[i].first;
-            size_t u_idx = vertices[i].second;
+        adj.at(u, v) = 1;
+        adj.at(v, u) = 1;
 
-            adj.at(v_idx, u_idx) = 1.0;
-            adj.at(u_idx, v_idx) = 1.0;
-
-            vertices[i].first = u_deg - 1;
-        }
-
-        vertices.erase(vertices.begin());
+        remaining[u]--;
+        remaining[v]--;
     }
 }
+
+void graph::make_graph_acyclic(const vector<int> &degrees) {}
+
+vector<int>
+graph::get_correct_degrees_for_connected_graph(const vector<int> &degrees) {
+
+#if DEBUG
+    string degrees_visualization_before_correcting = "[ ";
+    for (int i = 0; i < degrees.size(); i++) {
+        degrees_visualization_before_correcting.append(
+            std::to_string(degrees[i]));
+        if (i != degrees.size() - 1)
+            degrees_visualization_before_correcting.append(", ");
+        else
+            degrees_visualization_before_correcting.append("");
+    }
+    degrees_visualization_before_correcting.append(" ]");
+    io::print_text_with_header(degrees_visualization_before_correcting,
+                               "Degrees before correcting", "", BOXED, YELLOW);
+#endif
+
+    vector<int> correct_degrees = degrees;
+    int n = degrees.size();
+
+    for (int &d : correct_degrees)
+        d = std::clamp(d, 0, n - 1);
+
+    int sum_deg = 0;
+    for (int d : correct_degrees)
+        sum_deg += d;
+
+    if (sum_deg % 2 != 0) {
+        int max_idx = 0;
+
+        for (int i = 1; i < correct_degrees.size(); i++) {
+            if (correct_degrees[i] > correct_degrees[max_idx])
+                max_idx = i;
+        }
+
+        correct_degrees[max_idx]--;
+        sum_deg--;
+    }
+
+    int min_sum = n - 1;
+    while (sum_deg < min_sum) {
+        int min_idx = 0;
+
+        for (int i = 1; i < correct_degrees.size(); i++) {
+            if (correct_degrees[i] < correct_degrees[min_idx])
+                min_idx = i;
+        }
+
+        correct_degrees[min_idx]++;
+        sum_deg++;
+    }
+
+#if DEBUG
+    string degrees_visualization_after_correcting = "[ ";
+    for (int i = 0; i < correct_degrees.size(); i++) {
+        degrees_visualization_after_correcting.append(
+            std::to_string(correct_degrees[i]));
+        if (i != correct_degrees.size() - 1)
+            degrees_visualization_after_correcting.append(", ");
+        else
+            degrees_visualization_after_correcting.append("");
+    }
+    degrees_visualization_after_correcting.append(" ]");
+    io::print_text_with_header(degrees_visualization_after_correcting,
+                               "Degrees after correcting", "", BOXED, YELLOW);
+#endif
+
+    return correct_degrees;
+}
+
+vector<int>
+graph::get_correct_degrees_for_acyclic_graph(const vector<int> &degrees) {}
 
 int graph::degree(size_t v) const {
     int d = 0;
@@ -60,8 +121,6 @@ int graph::degree(size_t v) const {
     return d;
 }
 
-
 Matrix graph::get_adj() const { return adj; }
 
 size_t graph::get_size() const { return n; }
-
