@@ -8,12 +8,13 @@ using std::vector;
 class graph {
   private:
     size_t n;
-    Matrix adj;
+    matrix adj;
 
     vector<int>
     get_correct_degrees_for_connected_graph(const vector<int> &degrees);
     vector<int>
     get_correct_degrees_for_acyclic_graph(const vector<int> &degrees);
+    void generate_with_correct_degrees(const vector<int> &degrees);
 
   public:
     graph(size_t vertices);
@@ -23,6 +24,6 @@ class graph {
     void make_graph_oriented();
     int degree(size_t v) const;
 
-    Matrix get_adj() const;
+    matrix get_adj() const;
     size_t get_size() const;
 };

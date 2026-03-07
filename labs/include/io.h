@@ -47,7 +47,7 @@ class io {
                                        COLOR color = BASE);
 
     // === Current lab ===
-    static void print_matrix(const Matrix &mat, const std::string &header = "",
+    static void print_matrix(const matrix &mat, const std::string &header = "",
                              COLOR clr = BASE);
 
     // === Error ===

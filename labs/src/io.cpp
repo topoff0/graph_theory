@@ -292,7 +292,7 @@ void io::print_text_with_header(const string &text, const string &header,
     cout << reset_color;
 }
 
-void io::print_matrix(const Matrix &mat, const string &header, COLOR clr) {
+void io::print_matrix(const matrix &mat, const string &header, COLOR clr) {
     size_t rows = mat.get_rows();
     size_t cols = mat.get_cols();
     if (rows == 0 || cols == 0)
