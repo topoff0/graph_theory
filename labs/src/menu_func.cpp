@@ -37,12 +37,55 @@ void menu_func::StartWorkMenu::generate_graph() {
         degrees[i] = static_cast<int>(std::round(deg_values[i]));
     }
 
+    current_graph->set_status(NONE);
     current_graph->generate(degrees);
 
     io::print_header("Сгенерирован граф", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
 
     io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::make_graph_acyclic() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф!");
+        io::wait_enter();
+        return;
+    }
+
+    if (current_graph->has_status(ACYCLIC)) {
+        io::print_error("Граф уже ациклический");
+        io::wait_enter();
+        return;
+    }
+
+    size_t n = current_graph->get_size();
+    vector<int> degrees(n);
+
+    for (size_t i = 0; i < n; ++i) {
+        degrees[i] = (current_graph->degree(i));
+    }
+    current_graph->set_status(ACYCLIC);
+    current_graph->make_graph_acyclic(degrees);
+
+    io::print_header("Граф скорректирован: ациклический", BOLD);
+    io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
+
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::make_graph_oriented() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф!");
+        io::wait_enter();
+        return;
+    }
+
+    if (current_graph->has_status(ORIENTED)) {
+        io::print_error("Граф уже ориентированный");
+        io::wait_enter();
+        return;
+    }
 }
 
 void menu_func::StartWorkMenu::calc_eccentricities() {
@@ -70,29 +113,6 @@ void menu_func::StartWorkMenu::calc_diameter() {
     }
     // TODO: Сделать расчет диметральных вершин
 }
-
-void menu_func::StartWorkMenu::make_graph_acyclic() {
-    if (!current_graph) {
-        io::print_error("Сначала сгенерируйте граф!");
-        io::wait_enter();
-        return;
-    }
-
-    size_t n = current_graph->get_size();
-    vector<int> degrees(n);
-
-    for (size_t i = 0; i < n; ++i) {
-        degrees[i] = (current_graph->degree(i));
-    }
-    current_graph->make_graph_acyclic(degrees);
-
-    io::print_header("Граф скорректирован: ациклический", BOLD);
-    io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
-
-    io::wait_enter();
-}
-
-void menu_func::StartWorkMenu::make_graph_oriented() {}
 
 void menu_func::StartWorkMenu::run_shimbell() {}
 

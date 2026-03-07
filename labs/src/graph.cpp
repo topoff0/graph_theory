@@ -25,7 +25,6 @@ void graph::generate_with_correct_degrees(const vector<int> &degrees) {
         int d = vertices[0].first;
         int u = vertices[0].second;
 
-        // Можно начать от 0 - тогда будут петли
         for (int i = 1; i <= d; i++) {
             int v_idx = vertices[i].second;
 
@@ -195,7 +194,3 @@ int graph::degree(size_t v) const {
         d += adj.at(v, i);
     return d;
 }
-
-matrix graph::get_adj() const { return adj; }
-
-size_t graph::get_size() const { return n; }

@@ -5,10 +5,17 @@
 using std::pair;
 using std::vector;
 
+enum GraphStatus {
+    NONE = 0,
+    ACYCLIC = 1,
+    ORIENTED = 2
+};
+
 class graph {
   private:
     size_t n;
     matrix adj;
+    int status;
 
     vector<int>
     get_correct_degrees_for_connected_graph(const vector<int> &degrees);
@@ -24,6 +31,11 @@ class graph {
     void make_graph_oriented();
     int degree(size_t v) const;
 
-    matrix get_adj() const;
-    size_t get_size() const;
+    void set_status(GraphStatus s) { status |= s; }
+    void clear_status(GraphStatus s) { status &= ~s; }
+    bool has_status(GraphStatus s) const { return status & s; }
+    void clear_all_status() { status = NONE; }
+
+    matrix get_adj() const { return adj; }
+    size_t get_size() const { return n; }
 };
