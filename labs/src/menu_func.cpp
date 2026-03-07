@@ -86,6 +86,14 @@ void menu_func::StartWorkMenu::make_graph_oriented() {
         io::wait_enter();
         return;
     }
+
+    current_graph->set_status(ORIENTED);
+    current_graph->make_graph_oriented();
+
+    io::print_header("Граф скорректирован: ориентированный", BOLD);
+    io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
+
+    io::wait_enter();
 }
 
 void menu_func::StartWorkMenu::calc_eccentricities() {

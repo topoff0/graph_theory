@@ -50,6 +50,12 @@ void graph::make_graph_acyclic(const vector<int> &degrees) {
     generate_with_correct_degrees(deg);
 }
 
+void graph::make_graph_oriented() {
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < i; j++)
+            adj.at(i, j) = 0;
+}
+
 vector<int>
 graph::get_correct_degrees_for_connected_graph(const vector<int> &degrees) {
 
