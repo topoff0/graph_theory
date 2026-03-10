@@ -103,7 +103,18 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
         return;
     }
 
-    // TODO: Сделать расчет эксцентрисететов
+    vector<int> ecc = current_graph->bfs_ecc();
+
+    string after = "[ ";
+    for (int i = 0; i < ecc.size(); i++) {
+        after.append(std::to_string(ecc[i]));
+        if (i != ecc.size() - 1)
+            after.append(", ");
+    }
+    after.append(" ]");
+
+    io::print_text_with_header(after, "Degrees after correcting (acyclic)", "",
+                               BOXED, YELLOW);
 }
 void menu_func::StartWorkMenu::calc_centers() {
     if (!current_graph) {

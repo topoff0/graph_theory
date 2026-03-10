@@ -36,6 +36,10 @@ class graph {
     bool has_status(GraphStatus s) const { return status & s; }
     void clear_all_status() { status = NONE; }
 
+
+    vector<int> bfs_ecc(int start = 0);
+
+
     matrix get_adj() const { return adj; }
     size_t get_size() const { return n; }
 };

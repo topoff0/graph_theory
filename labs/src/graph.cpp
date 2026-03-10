@@ -2,8 +2,10 @@
 #include "config.h"
 #include "io.h"
 #include <algorithm>
+#include <queue>
 
 using std::pair;
+using std::queue;
 
 graph::graph(size_t vertices) : n(vertices), adj(vertices, vertices) {}
 
@@ -199,4 +201,26 @@ int graph::degree(size_t v) const {
     for (size_t i = 0; i < n; i++)
         d += adj.at(v, i);
     return d;
+}
+
+vector<int> graph::bfs_ecc(int start) {
+    vector<int> dist(n, -1);
+    queue<int> q;
+
+    dist[start] = 0;
+    q.push(start);
+
+    while (!q.empty()) {
+        int v = q.front();
+        q.pop();
+
+        for (int u = 0; u < n; u++) {
+            if (adj.at(v, u) == 1 && dist[u] == -1) {
+                dist[u] = dist[v] + 1;
+                q.push(u);
+            }
+        }
+    }
+
+    return dist;
 }
