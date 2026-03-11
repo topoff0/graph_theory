@@ -113,8 +113,8 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
     }
     after.append(" ]");
 
-    io::print_text_with_header(after, "Degrees after correcting (acyclic)", "",
-                               BOXED, YELLOW);
+    io::print_text_with_header(after, "Эксцентрисететы графа", "",
+                               BOXED, GREEN);
 }
 void menu_func::StartWorkMenu::calc_centers() {
     if (!current_graph) {

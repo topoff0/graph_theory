@@ -21,7 +21,8 @@ class graph {
     get_correct_degrees_for_connected_graph(const vector<int> &degrees);
     vector<int>
     get_correct_degrees_for_acyclic_graph(const vector<int> &degrees);
-    void generate_with_correct_degrees(const vector<int> &degrees);
+    void generate_tree(const vector<int> &degrees);
+    void generate_connected(const vector<int> &degrees);
 
   public:
     graph(size_t vertices);

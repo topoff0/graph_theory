@@ -3,13 +3,61 @@
 #include "io.h"
 #include <algorithm>
 #include <queue>
+#include <set>
 
 using std::pair;
 using std::queue;
+using std::set;
 
 graph::graph(size_t vertices) : n(vertices), adj(vertices, vertices) {}
 
-void graph::generate_with_correct_degrees(const vector<int> &degrees) {
+void graph::generate_tree(const vector<int> &degrees) {
+    adj.clear();
+    vector<int> deg = degrees;
+
+    while (true) {
+        int leaf = -1;
+        int other = -1;
+
+        for (int i = 0; i < n; i++)
+            if (deg[i] == 1) {
+                leaf = i;
+                break;
+            }
+
+        if (leaf == -1)
+            break;
+
+        for (int i = 0; i < n; i++)
+            if (deg[i] > 1) {
+                other = i;
+                break;
+            }
+
+        // две последние вершины, то есть остaлось [0, .., 0, 1, 1, 0, .., 0]
+        if (other == -1) {
+            int u = -1, v = -1;
+            for (int i = 0; i < n; i++)
+                if (deg[i] == 1) {
+                    if (u == -1)
+                        u = i;
+                    else
+                        v = i;
+                }
+            adj.at(u, v) = 1;
+            adj.at(v, u) = 1;
+            break;
+        }
+
+        adj.at(leaf, other) = 1;
+        adj.at(other, leaf) = 1;
+
+        deg[leaf]--;
+        deg[other]--;
+    }
+}
+
+void graph::generate_connected(const vector<int> &degrees) {
     vector<pair<int, int>> vertices;
 
     adj.clear();
@@ -42,14 +90,22 @@ void graph::generate_with_correct_degrees(const vector<int> &degrees) {
 
 void graph::generate(const vector<int> &degrees) {
     vector<int> deg = get_correct_degrees_for_connected_graph(degrees);
-
-    generate_with_correct_degrees(deg);
+    int sum_deg = 0;
+    for (int d : deg)
+        sum_deg += d;
+    if (sum_deg == 2 * (n - 1)) {
+        set_status(ACYCLIC);
+        generate_tree(deg);
+    } else
+        generate_connected(deg);
 }
 
 void graph::make_graph_acyclic(const vector<int> &degrees) {
     vector<int> deg = get_correct_degrees_for_acyclic_graph(degrees);
+    // TODO: if graph with oriented, make symmetric for adj matrix and update
+    // status to make it NOT oriented
 
-    generate_with_correct_degrees(deg);
+    generate_tree(deg);
 }
 
 void graph::make_graph_oriented() {
