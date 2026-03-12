@@ -37,7 +37,6 @@ void menu_func::StartWorkMenu::generate_graph() {
         degrees[i] = static_cast<int>(std::round(deg_values[i]));
     }
 
-    current_graph->set_status(NONE);
     current_graph->generate(degrees);
 
     io::print_header("Сгенерирован граф", BOLD);
@@ -59,14 +58,7 @@ void menu_func::StartWorkMenu::make_graph_acyclic() {
         return;
     }
 
-    size_t n = current_graph->get_size();
-    vector<int> degrees(n);
-
-    for (size_t i = 0; i < n; ++i) {
-        degrees[i] = (current_graph->degree(i));
-    }
-    current_graph->set_status(ACYCLIC);
-    current_graph->make_graph_acyclic(degrees);
+    current_graph->make_graph_acyclic();
 
     io::print_header("Граф скорректирован: ациклический", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
@@ -87,7 +79,6 @@ void menu_func::StartWorkMenu::make_graph_oriented() {
         return;
     }
 
-    current_graph->set_status(ORIENTED);
     current_graph->make_graph_oriented();
 
     io::print_header("Граф скорректирован: ориентированный", BOLD);
@@ -113,8 +104,8 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
     }
     after.append(" ]");
 
-    io::print_text_with_header(after, "Эксцентрисететы графа", "",
-                               BOXED, GREEN);
+    io::print_text_with_header(after, "Эксцентрисететы графа", "", BOXED,
+                               GREEN);
 }
 void menu_func::StartWorkMenu::calc_centers() {
     if (!current_graph) {

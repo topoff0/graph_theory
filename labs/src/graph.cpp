@@ -3,11 +3,9 @@
 #include "io.h"
 #include <algorithm>
 #include <queue>
-#include <set>
 
 using std::pair;
 using std::queue;
-using std::set;
 
 graph::graph(size_t vertices) : n(vertices), adj(vertices, vertices) {}
 
@@ -88,30 +86,52 @@ void graph::generate_connected(const vector<int> &degrees) {
     }
 }
 
+void graph::restore_graph_from_oriented() {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (adj.at(i, j) == 1)
+                adj.at(j, i) = 1;
+        }
+    }
+}
+
 void graph::generate(const vector<int> &degrees) {
     vector<int> deg = get_correct_degrees_for_connected_graph(degrees);
     int sum_deg = 0;
     for (int d : deg)
         sum_deg += d;
     if (sum_deg == 2 * (n - 1)) {
-        set_status(ACYCLIC);
         generate_tree(deg);
-    } else
+        set_status(ACYCLIC);
+    } else {
         generate_connected(deg);
+        set_status(NONE);
+    }
 }
 
-void graph::make_graph_acyclic(const vector<int> &degrees) {
-    vector<int> deg = get_correct_degrees_for_acyclic_graph(degrees);
-    // TODO: if graph with oriented, make symmetric for adj matrix and update
-    // status to make it NOT oriented
+void graph::make_graph_acyclic() {
+    if (has_status(ORIENTED)) {
+        restore_graph_from_oriented();
+        clear_status(ORIENTED);
+    }
 
+    vector<int> degrees(n);
+
+    for (size_t i = 0; i < n; ++i) {
+        degrees[i] = (degree(i));
+    }
+
+    vector<int> deg = get_correct_degrees_for_acyclic_graph(degrees);
     generate_tree(deg);
+    set_status(ACYCLIC);
 }
 
 void graph::make_graph_oriented() {
     for (int i = 0; i < n; i++)
         for (int j = 0; j < i; j++)
             adj.at(i, j) = 0;
+
+    set_status(ORIENTED);
 }
 
 vector<int>
