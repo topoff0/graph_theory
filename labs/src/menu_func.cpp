@@ -107,6 +107,7 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
     text.append(" ]");
 
     io::print_text_with_header(text, "Эксцентрисететы графа", "", BOXED, GREEN);
+    io::wait_enter();
 }
 void menu_func::StartWorkMenu::calc_centers() {
     if (!current_graph) {
@@ -123,9 +124,13 @@ void menu_func::StartWorkMenu::calc_centers() {
             text.append(", ");
     }
     text.append(" ]");
-    // TODO: Print adj in debug
 
-    io::print_text_with_header(text, "Эксцентрисететы графа", "", BOXED, GREEN);
+#if DEBUG
+    io::print_matrix(current_graph->get_adj(), "DEBUG: Матрица смежности для проверки", YELLOW);
+#endif
+
+    io::print_text_with_header(text, "Центры графа", "", BOXED, GREEN);
+    io::wait_enter();
 }
 void menu_func::StartWorkMenu::calc_diameter() {
     if (!current_graph) {

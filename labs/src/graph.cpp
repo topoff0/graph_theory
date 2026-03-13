@@ -147,8 +147,8 @@ graph::get_correct_degrees_for_connected_graph(const vector<int> &degrees) {
             before.append("");
     }
     before.append(" ]");
-    io::print_text_with_header(before, "Degrees before correcting", "", BOXED,
-                               YELLOW);
+    io::print_text_with_header(before, "DEBUG: Степени до корректировки", "",
+                               BOXED, YELLOW);
 #endif
 
     vector<int> correct_degrees = degrees;
@@ -196,8 +196,8 @@ graph::get_correct_degrees_for_connected_graph(const vector<int> &degrees) {
             after.append("");
     }
     after.append(" ]");
-    io::print_text_with_header(after, "Degrees after correcting", "", BOXED,
-                               YELLOW);
+    io::print_text_with_header(after, "DEBUG: Степени после корректировки", "",
+                               BOXED, YELLOW);
 #endif
 
     return correct_degrees;
@@ -215,8 +215,9 @@ graph::get_correct_degrees_for_acyclic_graph(const vector<int> &degrees) {
     }
     before.append(" ]");
 
-    io::print_text_with_header(before, "Degrees before correcting (acyclic)",
-                               "", BOXED, YELLOW);
+    io::print_text_with_header(
+        before, "DEBUG: Степени до корректировки (неациклический граф)", "",
+        BOXED, YELLOW);
 #endif
 
     vector<int> correct_degrees = degrees;
@@ -265,8 +266,9 @@ graph::get_correct_degrees_for_acyclic_graph(const vector<int> &degrees) {
     }
     after.append(" ]");
 
-    io::print_text_with_header(after, "Degrees after correcting (acyclic)", "",
-                               BOXED, YELLOW);
+    io::print_text_with_header(
+        after, "DEBUG: Степени после корректировки (ациклический граф)", "",
+        BOXED, YELLOW);
 #endif
 
     return correct_degrees;
