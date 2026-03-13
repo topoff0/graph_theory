@@ -121,7 +121,7 @@ void menu_func::StartWorkMenu::calc_centers() {
     for (int i = 0; i < centers.size(); i++) {
         text += centers[i];
         if (i != centers.size() - 1)
-            text.append(", ");
+            text.append(" ");
     }
     text.append(" ]");
 

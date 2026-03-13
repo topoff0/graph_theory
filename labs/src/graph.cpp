@@ -2,8 +2,11 @@
 #include "config.h"
 #include "io.h"
 #include <algorithm>
+#include <climits>
 #include <queue>
 
+using std::min;
+using std::max;
 using std::pair;
 using std::queue;
 
@@ -282,10 +285,10 @@ int graph::degree(size_t v) const {
 }
 
 vector<int> graph::calc_ecc(int start) {
-    vector<int> ecc(n, -1);
+    vector<int> eccentricities(n, -1);
     queue<int> q;
 
-    ecc[start] = 0;
+    eccentricities[start] = 0;
     q.push(start);
 
     while (!q.empty()) {
@@ -293,33 +296,39 @@ vector<int> graph::calc_ecc(int start) {
         q.pop();
 
         for (int u = 0; u < n; u++) {
-            if (adj.at(v, u) == 1 && ecc[u] == -1) {
-                ecc[u] = ecc[v] + 1;
+            if (adj.at(v, u) == 1 && eccentricities[u] == -1) {
+                eccentricities[u] = eccentricities[v] + 1;
                 q.push(u);
             }
         }
     }
 
-    return ecc;
+    return eccentricities;
 }
 
 vector<char> graph::calc_centers() {
-    int min_from_max = 1000000;
-    vector<int> max_ecc(n);
+    int min_eccentricity = INT_MAX;
+    vector<int> eccentricities(n);
     vector<char> result(n);
 
     for (int i = 0; i < n; i++) {
-        vector<int> ecc = calc_ecc(i);
-        int cur_max = *std::max_element(ecc.begin(), ecc.end());
+        vector<int> current_eccentircities = calc_ecc(i);
+        int eccentricity = 0;
 
-        if (cur_max < min_from_max)
-            min_from_max = cur_max;
+        for (int j = 0; j < n; j++) {
+            if (current_eccentircities[j] == -1) {
+                eccentricity = INT_MAX;
+                break;
+            }
+            eccentricity = max(eccentricity, current_eccentircities[j]);
+        }
 
-        max_ecc[i] = cur_max;
+        min_eccentricity = min(min_eccentricity, eccentricity);
+        eccentricities[i] = eccentricity;
     }
 
     for (int i = 0; i < n; i++) {
-        result[i] = (max_ecc[i] == min_from_max) ? 'x' : 'o';
+        result[i] = (eccentricities[i] == min_eccentricity) ? 'x' : '.';
     }
 
     return result;
