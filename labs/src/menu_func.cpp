@@ -93,20 +93,20 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
         io::wait_enter();
         return;
     }
-    int index = io::read_number({0, current_graph->get_size() - 1}, "Введите индекс вершины");
+    int index = io::read_number({0, current_graph->get_size() - 1},
+                                "Введите индекс вершины");
 
     vector<int> ecc = current_graph->calc_ecc(index);
 
-    string after = "[ ";
+    string text = "[ ";
     for (int i = 0; i < ecc.size(); i++) {
-        after.append(std::to_string(ecc[i]));
+        text.append(std::to_string(ecc[i]));
         if (i != ecc.size() - 1)
-            after.append(", ");
+            text.append(", ");
     }
-    after.append(" ]");
+    text.append(" ]");
 
-    io::print_text_with_header(after, "Эксцентрисететы графа", "", BOXED,
-                               GREEN);
+    io::print_text_with_header(text, "Эксцентрисететы графа", "", BOXED, GREEN);
 }
 void menu_func::StartWorkMenu::calc_centers() {
     if (!current_graph) {
@@ -114,7 +114,18 @@ void menu_func::StartWorkMenu::calc_centers() {
         io::wait_enter();
         return;
     }
-    // TODO: Сделать расчет центров
+
+    vector<char> centers = current_graph->calc_centers();
+    string text = "[ ";
+    for (int i = 0; i < centers.size(); i++) {
+        text += centers[i];
+        if (i != centers.size() - 1)
+            text.append(", ");
+    }
+    text.append(" ]");
+    // TODO: Print adj in debug
+
+    io::print_text_with_header(text, "Эксцентрисететы графа", "", BOXED, GREEN);
 }
 void menu_func::StartWorkMenu::calc_diameter() {
     if (!current_graph) {

@@ -37,6 +37,7 @@ class graph {
     bool has_status(GraphStatus s) const { return status & s; }
 
     vector<int> calc_ecc(int start);
+    vector<char> calc_centers();
 
     matrix get_adj() const { return adj; }
     size_t get_size() const { return n; }

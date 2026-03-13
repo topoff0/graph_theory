@@ -300,3 +300,25 @@ vector<int> graph::calc_ecc(int start) {
 
     return ecc;
 }
+
+vector<char> graph::calc_centers() {
+    int min_from_max = 1000000;
+    vector<int> max_ecc(n);
+    vector<char> result(n);
+
+    for (int i = 0; i < n; i++) {
+        vector<int> ecc = calc_ecc(i);
+        int cur_max = *std::max_element(ecc.begin(), ecc.end());
+
+        if (cur_max < min_from_max)
+            min_from_max = cur_max;
+
+        max_ecc[i] = cur_max;
+    }
+
+    for (int i = 0; i < n; i++) {
+        result[i] = (max_ecc[i] == min_from_max) ? 'x' : 'o';
+    }
+
+    return result;
+}
