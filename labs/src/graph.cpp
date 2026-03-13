@@ -32,7 +32,7 @@ void graph::generate_tree(const vector<int> &degrees) {
                 break;
             }
 
-        // две последние вершины, то есть остaлось [0, .., 0, 1, 1, 0, .., 0]
+        // две последние вершины
         if (other == -1) {
             int u = -1, v = -1;
             for (int i = 0; i < n; i++)
@@ -56,9 +56,9 @@ void graph::generate_tree(const vector<int> &degrees) {
 }
 
 void graph::generate_connected(const vector<int> &degrees) {
-    vector<pair<int, int>> vertices;
-
     adj.clear();
+
+    vector<pair<int, int>> vertices;
 
     for (int i = 0; i < n; i++)
         vertices.push_back({degrees[i], i});
@@ -279,11 +279,11 @@ int graph::degree(size_t v) const {
     return d;
 }
 
-vector<int> graph::bfs_ecc(int start) {
-    vector<int> dist(n, -1);
+vector<int> graph::calc_ecc(int start) {
+    vector<int> ecc(n, -1);
     queue<int> q;
 
-    dist[start] = 0;
+    ecc[start] = 0;
     q.push(start);
 
     while (!q.empty()) {
@@ -291,12 +291,12 @@ vector<int> graph::bfs_ecc(int start) {
         q.pop();
 
         for (int u = 0; u < n; u++) {
-            if (adj.at(v, u) == 1 && dist[u] == -1) {
-                dist[u] = dist[v] + 1;
+            if (adj.at(v, u) == 1 && ecc[u] == -1) {
+                ecc[u] = ecc[v] + 1;
                 q.push(u);
             }
         }
     }
 
-    return dist;
+    return ecc;
 }

@@ -93,8 +93,9 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
         io::wait_enter();
         return;
     }
+    int index = io::read_number({0, current_graph->get_size() - 1}, "Введите индекс вершины");
 
-    vector<int> ecc = current_graph->bfs_ecc();
+    vector<int> ecc = current_graph->calc_ecc(index);
 
     string after = "[ ";
     for (int i = 0; i < ecc.size(); i++) {
