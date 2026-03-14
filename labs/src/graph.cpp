@@ -5,8 +5,8 @@
 #include <climits>
 #include <queue>
 
-using std::min;
 using std::max;
+using std::min;
 using std::pair;
 using std::queue;
 
@@ -306,8 +306,8 @@ vector<int> graph::calc_ecc(int start) {
     return eccentricities;
 }
 
-vector<char> graph::calc_centers() {
-    int min_eccentricity = INT_MAX;
+vector<char> graph::calc_central_vertices() {
+    int radius = INT_MAX;
     vector<int> eccentricities(n);
     vector<char> result(n);
 
@@ -323,12 +323,40 @@ vector<char> graph::calc_centers() {
             eccentricity = max(eccentricity, current_eccentircities[j]);
         }
 
-        min_eccentricity = min(min_eccentricity, eccentricity);
+        radius = min(radius, eccentricity);
         eccentricities[i] = eccentricity;
     }
 
     for (int i = 0; i < n; i++) {
-        result[i] = (eccentricities[i] == min_eccentricity) ? 'x' : '.';
+        result[i] = (eccentricities[i] == radius) ? 'x' : '.';
+    }
+
+    return result;
+}
+
+vector<char> graph::calc_diametral_vertices() {
+    int diameter = 0;
+    vector<int> eccentricities(n);
+    vector<char> result(n);
+
+    for (int i = 0; i < n; i++) {
+        vector<int> dist = calc_ecc(i);
+        int eccentricity = 0;
+
+        for (int j = 0; j < n; j++) {
+            if (dist[j] == -1) {
+                eccentricity = INT_MAX;
+                break;
+            }
+            eccentricity = max(eccentricity, dist[j]);
+        }
+
+        eccentricities[i] = eccentricity;
+        diameter = max(diameter, eccentricity);
+    }
+
+    for (int i = 0; i < n; i++) {
+        result[i] = (eccentricities[i] == diameter) ? 'x' : '.';
     }
 
     return result;

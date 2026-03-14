@@ -47,7 +47,7 @@ void menu_func::StartWorkMenu::generate_graph() {
 
 void menu_func::StartWorkMenu::make_graph_acyclic() {
     if (!current_graph) {
-        io::print_error("Сначала сгенерируйте граф!");
+        io::print_error("Сначала сгенерируйте граф");
         io::wait_enter();
         return;
     }
@@ -68,7 +68,7 @@ void menu_func::StartWorkMenu::make_graph_acyclic() {
 
 void menu_func::StartWorkMenu::make_graph_oriented() {
     if (!current_graph) {
-        io::print_error("Сначала сгенерируйте граф!");
+        io::print_error("Сначала сгенерируйте граф");
         io::wait_enter();
         return;
     }
@@ -89,7 +89,7 @@ void menu_func::StartWorkMenu::make_graph_oriented() {
 
 void menu_func::StartWorkMenu::calc_eccentricities() {
     if (!current_graph) {
-        io::print_error("Сначала сгенерируйте граф!");
+        io::print_error("Сначала сгенерируйте граф");
         io::wait_enter();
         return;
     }
@@ -111,12 +111,12 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
 }
 void menu_func::StartWorkMenu::calc_centers() {
     if (!current_graph) {
-        io::print_error("Сначала сгенерируйте граф!");
+        io::print_error("Сначала сгенерируйте граф");
         io::wait_enter();
         return;
     }
 
-    vector<char> centers = current_graph->calc_centers();
+    vector<char> centers = current_graph->calc_central_vertices();
     string text = "[ ";
     for (int i = 0; i < centers.size(); i++) {
         text += centers[i];
@@ -126,7 +126,8 @@ void menu_func::StartWorkMenu::calc_centers() {
     text.append(" ]");
 
 #if DEBUG
-    io::print_matrix(current_graph->get_adj(), "DEBUG: Матрица смежности для проверки", YELLOW);
+    io::print_matrix(current_graph->get_adj(),
+                     "DEBUG: Матрица смежности для проверки", YELLOW);
 #endif
 
     io::print_text_with_header(text, "Центры графа", "", BOXED, GREEN);
@@ -134,11 +135,27 @@ void menu_func::StartWorkMenu::calc_centers() {
 }
 void menu_func::StartWorkMenu::calc_diameter() {
     if (!current_graph) {
-        io::print_error("Сначала сгенерируйте граф!");
+        io::print_error("Сначала сгенерируйте граф");
         io::wait_enter();
         return;
     }
-    // TODO: Сделать расчет диметральных вершин
+
+    vector<char> diameters = current_graph->calc_diametral_vertices();
+    string text = "[ ";
+    for (int i = 0; i < diameters.size(); i++) {
+        text += diameters[i];
+        if (i != diameters.size() - 1)
+            text.append(" ");
+    }
+    text.append(" ]");
+
+#if DEBUG
+    io::print_matrix(current_graph->get_adj(),
+                     "DEBUG: Матрица смежности для проверки", YELLOW);
+#endif
+
+    io::print_text_with_header(text, "Диаметральные вершины графа", "", BOXED, GREEN);
+    io::wait_enter();
 }
 
 void menu_func::StartWorkMenu::run_shimbell() {}
