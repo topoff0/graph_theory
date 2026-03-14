@@ -308,7 +308,9 @@ void io::print_matrix(const matrix &mat, const string &header, COLOR clr) {
         for (size_t j = 0; j < cols; ++j) {
             double val = mat.at(i, j);
             string s;
-            if (val == static_cast<int>(val))
+            if (val == INT_MAX)
+                s = "∞";
+            else if (val == static_cast<int>(val))
                 s = std::to_string(static_cast<int>(val));
             else {
                 char buffer[32];
@@ -342,7 +344,9 @@ void io::print_matrix(const matrix &mat, const string &header, COLOR clr) {
         for (size_t j = 0; j < cols; ++j) {
             double val = mat.at(i, j);
             string s;
-            if (val == static_cast<int>(val))
+            if (val == INT_MAX)
+                s = "∞";
+            else if (val == static_cast<int>(val))
                 s = std::to_string(static_cast<int>(val));
             else {
                 char buffer[32];
@@ -350,7 +354,7 @@ void io::print_matrix(const matrix &mat, const string &header, COLOR clr) {
                 s = buffer;
             }
 
-            size_t padding = cell_width - s.length();
+            size_t padding = cell_width - format::count_visible_chars(s);
             size_t pad_left = padding / 2;
             size_t pad_right = padding - pad_left;
 

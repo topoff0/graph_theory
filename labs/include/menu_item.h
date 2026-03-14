@@ -41,9 +41,14 @@ static const vector<menu_item> START_WORK_MENU = {
     {5, "Посчитать эксцентриситеты вершины", BASE},
     {6, "Выделить центральные вершины графа", BASE},
     {7, "Выделить диаметральные вершины графа", BASE},
+    {8, "Метод Шимбелла", BASE},
     {0, "Завершить работу", RED}};
 
-static const vector<menu_item> CHOOSE_WEIGHT_MODE_MENU = {
+static const vector<menu_item> WEIGHT_MODE_MENU = {
     {1, "Только положительные значения", BASE},
     {2, "Только отрицательные значения", BASE},
     {3, "Смешанные значения", BASE}};
+
+static const vector<menu_item> SHIMBELL_MIN_MAX_MENU = {
+    {1, "Минимальный путь", BASE},
+    {2, "Максимальный путь", BASE}};

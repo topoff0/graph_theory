@@ -11,7 +11,7 @@ struct menu_func {
         static void calc_eccentricities();
         static void calc_centers();
         static void calc_diameter();
-        static void run_shimbell();
+        static void run_shimbell_method();
         static void check_routes();
     };
 

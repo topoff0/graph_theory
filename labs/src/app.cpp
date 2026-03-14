@@ -80,6 +80,8 @@ void app::handle_start_work_menu(int choice) {
     case 7:
         menu_func::StartWorkMenu::calc_diameter();
         break;
+    case 8:
+        menu_func::StartWorkMenu::run_shimbell_method();
 
     default:
         break;

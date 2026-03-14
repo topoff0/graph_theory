@@ -39,11 +39,10 @@ class graph {
 
     void make_graph_acyclic();
     void make_graph_oriented();
-    int degree(size_t v) const;
 
     bool has_status(GraphStatus s) const { return status & s; }
 
-    bool has_weight_mode(WeightMode m) const { return mode & m; }
+    bool is_weight_mode(WeightMode m) const { return mode == m; }
     void set_weight_mode(WeightMode m) { mode |= m; }
     void clear_all_weight_modes() { mode = EMPTY; }
 
@@ -51,6 +50,9 @@ class graph {
     vector<char> calc_central_vertices();
     vector<char> calc_diametral_vertices();
 
+    matrix run_shimbell(size_t edges, bool find_max);
+
+    int degree(size_t v) const;
     matrix get_adj() const { return adj; }
     matrix get_weights() const { return weights; }
     size_t get_size() const { return n; }

@@ -45,9 +45,8 @@ void menu_func::StartWorkMenu::generate_weights_matrix() {
         return;
     }
 
-    io::print_command_menu(CHOOSE_WEIGHT_MODE_MENU,
-                           "Выбирете вариант заполнения");
-    int mode_number = io::read_number(menu_min_max_id(CHOOSE_WEIGHT_MODE_MENU),
+    io::print_command_menu(WEIGHT_MODE_MENU, "Выбирете вариант заполнения");
+    int mode_number = io::read_number(menu_min_max_id(WEIGHT_MODE_MENU),
                                       "Введите номер варианта");
 
     current_graph->generate_weight_matrix(static_cast<WeightMode>(mode_number));
@@ -171,6 +170,29 @@ void menu_func::StartWorkMenu::calc_diameter() {
     io::wait_enter();
 }
 
-void menu_func::StartWorkMenu::run_shimbell() {}
+void menu_func::StartWorkMenu::run_shimbell_method() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+    if (current_graph->is_weight_mode(EMPTY)) {
+        io::print_error("Сначала сгенерируйте весовую матрицу");
+        io::wait_enter();
+        return;
+    }
+
+    int edges =
+        io::read_number({1, current_graph->get_size()}, "Введите число ребер");
+    io::print_command_menu(SHIMBELL_MIN_MAX_MENU, "Выбирите вариант пути");
+    int mode_number = io::read_number(menu_min_max_id(SHIMBELL_MIN_MAX_MENU),
+                                      "Введите номер варианта");
+    bool find_max = (mode_number == 2);
+
+    matrix result = current_graph->run_shimbell(edges, find_max);
+    io::print_matrix(result);
+
+    io::wait_enter();
+}
 
 void menu_func::StartWorkMenu::check_routes() {}

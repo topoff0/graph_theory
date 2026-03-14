@@ -133,7 +133,13 @@ void graph::generate_weight_matrix(const WeightMode mode) {
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
 
+            if (i == j) {
+                weights.at(i, j) = 0;
+                continue;
+            }
+
             if (adj.at(i, j) == 0) {
+                weights.at(i, j) = INT_MAX;
                 continue;
             }
 
@@ -160,6 +166,8 @@ void graph::generate_weight_matrix(const WeightMode mode) {
             }
 
             weights.at(i, j) = w;
+            if (!has_status(ORIENTED))
+                weights.at(j, i) = w;
         }
     }
 }
@@ -409,6 +417,48 @@ vector<char> graph::calc_diametral_vertices() {
 
     for (int i = 0; i < n; i++) {
         result[i] = (eccentricities[i] == diameter) ? 'x' : '.';
+    }
+
+    return result;
+}
+
+matrix graph::run_shimbell(size_t edges, bool find_max) {
+    if (edges == 1)
+        return weights;
+
+    matrix result = weights;
+    matrix temp(n, n);
+
+    for (size_t step = 2; step <= edges; step++) {
+
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = 0; j < n; j++) {
+
+                if (find_max)
+                    temp.at(i, j) = INT_MIN;
+                else
+                    temp.at(i, j) = INT_MAX;
+
+                for (size_t k = 0; k < n; k++) {
+
+                    if (result.at(i, k) == INT_MAX ||
+                        weights.at(k, j) == INT_MAX)
+                        continue;
+
+                    int value = result.at(i, k) + weights.at(k, j);
+
+                    if (find_max) {
+                        if (value > temp.at(i, j))
+                            temp.at(i, j) = value;
+                    } else {
+                        if (value < temp.at(i, j))
+                            temp.at(i, j) = value;
+                    }
+                }
+            }
+        }
+
+        result = temp;
     }
 
     return result;
