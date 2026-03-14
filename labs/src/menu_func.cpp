@@ -5,10 +5,10 @@
 #include "graph.h"
 #include "io.h"
 #include "matrix.h"
+#include "menu_item.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
-#include <vector>
 
 static graph *current_graph = nullptr;
 static matrix *current_matrix = nullptr;
@@ -17,7 +17,7 @@ void menu_func::back_to_main_menu(bool &back) { back = true; }
 
 void menu_func::MainMenu::test_distribution() {
     distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
-    auto values = dist.sample(1000);
+    vector<double> values = dist.sample(1000);
     dist.print_histogram(values, 20, COLOR::GREEN, 60);
 }
 
@@ -27,22 +27,32 @@ void menu_func::StartWorkMenu::generate_graph() {
 
     if (current_graph != nullptr)
         delete current_graph;
+
     current_graph = new graph(n);
 
-    distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
-    auto deg_values = dist.sample(n);
-
-    vector<int> degrees(n, 0);
-    for (size_t i = 0; i < n; i++) {
-        degrees[i] = static_cast<int>(std::round(deg_values[i]));
-    }
-
-    current_graph->generate(degrees);
+    current_graph->generate_graph();
 
     io::print_header("Сгенерирован граф", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
 
     io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::generate_weights_matrix() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+
+    io::print_command_menu(CHOOSE_WEIGHT_MODE_MENU,
+                           "Выбирете вариант заполнения");
+    int mode_number = io::read_number(menu_min_max_id(CHOOSE_WEIGHT_MODE_MENU),
+                                      "Введите номер варианта");
+
+    current_graph->generate_weight_matrix(static_cast<WeightMode>(mode_number));
+    io::print_header("Сгенерирована весовая матрица");
+    io::print_matrix(current_graph->get_weights(), "Весовая матрица", CYAN);
 }
 
 void menu_func::StartWorkMenu::make_graph_acyclic() {
@@ -154,7 +164,8 @@ void menu_func::StartWorkMenu::calc_diameter() {
                      "DEBUG: Матрица смежности для проверки", YELLOW);
 #endif
 
-    io::print_text_with_header(text, "Диаметральные вершины графа", "", BOXED, GREEN);
+    io::print_text_with_header(text, "Диаметральные вершины графа", "", BOXED,
+                               GREEN);
     io::wait_enter();
 }
 

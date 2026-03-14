@@ -215,22 +215,25 @@ void io::print_command_menu(const vector<menu_item> &items,
              << endl;
     }
     // Exit items
-    cout << outer_padding << "├" << border << "┤" << endl;
-    for (size_t i = 0; i < bottom_items.size(); ++i) {
-        int id = bottom_items[i]->id;
-        string menu_item = std::to_string(id) + (i + 1 >= 10 ? ". " : ".  ") +
-                           bottom_items[i]->title;
+    if (bottom_items.size() > 0) {
+        cout << outer_padding << "├" << border << "┤" << endl;
+        for (size_t i = 0; i < bottom_items.size(); ++i) {
+            int id = bottom_items[i]->id;
+            string menu_item = std::to_string(id) +
+                               (i + 1 >= 10 ? ". " : ".  ") +
+                               bottom_items[i]->title;
 
-        int visible_item_len = format::count_visible_chars(menu_item);
-        int item_padding_left =
-            id >= 0 ? UI_LIST_LEFT_PADDING : UI_LIST_LEFT_PADDING - 1;
-        int item_padding_right =
-            width - visible_item_len - item_padding_left - 1;
+            int visible_item_len = format::count_visible_chars(menu_item);
+            int item_padding_left =
+                id >= 0 ? UI_LIST_LEFT_PADDING : UI_LIST_LEFT_PADDING - 1;
+            int item_padding_right =
+                width - visible_item_len - item_padding_left - 1;
 
-        cout << outer_padding << "│" << get_color_code(bottom_items[i]->clr)
-             << string(item_padding_left, ' ') << menu_item
-             << string(item_padding_right, ' ') << get_color_code(CYAN) << " │"
-             << endl;
+            cout << outer_padding << "│" << get_color_code(bottom_items[i]->clr)
+                 << string(item_padding_left, ' ') << menu_item
+                 << string(item_padding_right, ' ') << get_color_code(CYAN)
+                 << " │" << endl;
+        }
     }
 
     cout << outer_padding << "╰" << border << "╯" << endl;

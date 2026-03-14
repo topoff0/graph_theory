@@ -1,5 +1,6 @@
 #include "graph.h"
 #include "config.h"
+#include "distribution.h"
 #include "io.h"
 #include <algorithm>
 #include <climits>
@@ -10,7 +11,8 @@ using std::min;
 using std::pair;
 using std::queue;
 
-graph::graph(size_t vertices) : n(vertices), adj(vertices, vertices) {}
+graph::graph(size_t vertices)
+    : n(vertices), adj(vertices, vertices), weights(vertices, vertices) {}
 
 void graph::generate_tree(const vector<int> &degrees) {
     adj.clear();
@@ -98,8 +100,15 @@ void graph::restore_graph_from_oriented() {
     }
 }
 
-void graph::generate(const vector<int> &degrees) {
-    vector<int> deg = get_correct_degrees_for_connected_graph(degrees);
+void graph::generate_graph() {
+    distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
+    vector<double> deg_values = dist.sample(n);
+
+    vector<int> deg(n, 0);
+    for (size_t i = 0; i < n; i++) {
+        deg[i] = static_cast<int>(std::round(deg_values[i]));
+    }
+
     int sum_deg = 0;
     for (int d : deg)
         sum_deg += d;
@@ -108,8 +117,13 @@ void graph::generate(const vector<int> &degrees) {
         set_status(ACYCLIC);
     } else {
         generate_connected(deg);
-        set_status(NONE);
+        clear_all_statuses();
     }
+}
+void graph::generate_weight_matrix(const WeightMode mode) {
+    set_weight_mode(mode);
+
+    distribution dist(WEIGHT_MU, WEIGHT_ALPHA, static_cast<unsigned int>(time(0)));
 }
 
 void graph::make_graph_acyclic() {

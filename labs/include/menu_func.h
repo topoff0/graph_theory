@@ -5,6 +5,7 @@ struct menu_func {
 
     struct StartWorkMenu {
         static void generate_graph();
+        static void generate_weights_matrix();
         static void make_graph_acyclic();
         static void make_graph_oriented();
         static void calc_eccentricities();

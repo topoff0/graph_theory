@@ -42,7 +42,7 @@ void app::handle_main_menu(int choice) {
 
 void app::start() {
     while (_running && !_back) {
-        menu start_work_menu("Стартовое меню");
+        menu start_work_menu("Работа с графами");
         start_work_menu.show(START_WORK_MENU, "Список команд");
 
         int choice = io::read_number(menu_min_max_id(START_WORK_MENU),
@@ -63,18 +63,21 @@ void app::handle_start_work_menu(int choice) {
         menu_func::StartWorkMenu::generate_graph();
         break;
     case 2:
-        menu_func::StartWorkMenu::make_graph_acyclic();
+        menu_func::StartWorkMenu::generate_weights_matrix();
         break;
     case 3:
-        menu_func::StartWorkMenu::make_graph_oriented();
+        menu_func::StartWorkMenu::make_graph_acyclic();
         break;
     case 4:
-        menu_func::StartWorkMenu::calc_eccentricities();
+        menu_func::StartWorkMenu::make_graph_oriented();
         break;
     case 5:
-        menu_func::StartWorkMenu::calc_centers();
+        menu_func::StartWorkMenu::calc_eccentricities();
         break;
     case 6:
+        menu_func::StartWorkMenu::calc_centers();
+        break;
+    case 7:
         menu_func::StartWorkMenu::calc_diameter();
         break;
 

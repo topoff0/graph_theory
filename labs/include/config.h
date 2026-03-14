@@ -12,12 +12,14 @@
 
 
 // === DISTRIBUTION PARAMETERS ===
-// из справочника
 // #define MU 4 // центр распределения
-// #define ALPHA 1.57 // мастаб (крутизна) распределения
+// #define ALPHA 1.57 // масштаб (крутизна) распределения
 
 #define MU 2.25 // центр распределения
-#define ALPHA 2.0 // мастаб (крутизна) распределения
+#define ALPHA 2.0 // масштаб (крутизна) распределения
+
+#define WEIGHT_MU 0.0 // центр распределения
+#define WEIGHT_ALPHA 0.5 // масштаб (крутизна) распределения
 
 // === CONSTANT WORDS ===
 #define ERROR_WORD "ОШИБКА"
