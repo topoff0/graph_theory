@@ -104,10 +104,12 @@ void graph::generate_graph() {
     distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
     vector<double> deg_values = dist.sample(n);
 
-    vector<int> deg(n, 0);
+    vector<int> degrees(n, 0);
     for (size_t i = 0; i < n; i++) {
-        deg[i] = static_cast<int>(std::round(deg_values[i]));
+        degrees[i] = static_cast<int>(std::round(deg_values[i]));
     }
+
+    vector<int> deg = get_correct_degrees_for_connected_graph(degrees);
 
     int sum_deg = 0;
     for (int d : deg)
@@ -123,7 +125,43 @@ void graph::generate_graph() {
 void graph::generate_weight_matrix(const WeightMode mode) {
     set_weight_mode(mode);
 
-    distribution dist(WEIGHT_MU, WEIGHT_ALPHA, static_cast<unsigned int>(time(0)));
+    distribution dist(WEIGHT_MU, WEIGHT_ALPHA,
+                      static_cast<unsigned int>(time(0)));
+
+    weights.clear();
+
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+
+            if (adj.at(i, j) == 0) {
+                continue;
+            }
+
+            int w = static_cast<int>(std::round(dist.sample()));
+
+            switch (mode) {
+
+            case POSITIVE:
+                w = std::abs(w);
+                break;
+
+            case NEGATIVE:
+                w = -std::abs(w);
+                break;
+
+            case MIXED:
+                if (rand() % 2)
+                    w = -std::abs(w);
+                else
+                    w = std::abs(w);
+                break;
+            case EMPTY:
+                return;
+            }
+
+            weights.at(i, j) = w;
+        }
+    }
 }
 
 void graph::make_graph_acyclic() {

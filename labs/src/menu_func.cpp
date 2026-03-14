@@ -51,8 +51,10 @@ void menu_func::StartWorkMenu::generate_weights_matrix() {
                                       "Введите номер варианта");
 
     current_graph->generate_weight_matrix(static_cast<WeightMode>(mode_number));
-    io::print_header("Сгенерирована весовая матрица");
+    io::print_header("Сгенерирована весовая матрица", BOLD);
     io::print_matrix(current_graph->get_weights(), "Весовая матрица", CYAN);
+
+    io::wait_enter();
 }
 
 void menu_func::StartWorkMenu::make_graph_acyclic() {
