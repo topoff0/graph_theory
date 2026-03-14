@@ -149,6 +149,8 @@ void graph::generate_weight_matrix(const WeightMode mode) {
 
             case POSITIVE:
                 w = std::abs(w);
+                if (w == 0)
+                    w = 1;
                 break;
 
             case NEGATIVE:
@@ -457,9 +459,7 @@ matrix graph::run_shimbell(size_t edges, bool find_max) {
                 }
             }
         }
-
         result = temp;
     }
-
     return result;
 }

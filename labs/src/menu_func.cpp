@@ -190,7 +190,14 @@ void menu_func::StartWorkMenu::run_shimbell_method() {
     bool find_max = (mode_number == 2);
 
     matrix result = current_graph->run_shimbell(edges, find_max);
-    io::print_matrix(result);
+#if DEBUG
+    io::print_matrix(current_graph->get_weights(),
+                     "DEBUG: Весовая матрица для проверки", YELLOW);
+
+#endif
+    string matrix_header = find_max ? "Матрица максимальных расстояний"
+                                    : "Матрица минимальных расстояний";
+    io::print_matrix(result, matrix_header, CYAN);
 
     io::wait_enter();
 }
