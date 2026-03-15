@@ -52,6 +52,8 @@ class graph {
 
     matrix run_shimbell(size_t edges, bool find_max);
 
+    unsigned long long count_routes(size_t start, size_t end);
+
     int degree(size_t v) const;
     matrix get_adj() const { return adj; }
     matrix get_weights() const { return weights; }

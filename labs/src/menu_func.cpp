@@ -202,4 +202,37 @@ void menu_func::StartWorkMenu::run_shimbell_method() {
     io::wait_enter();
 }
 
-void menu_func::StartWorkMenu::check_routes() {}
+void menu_func::StartWorkMenu::check_routes() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+
+    if (!current_graph->has_status(ORIENTED) ||
+        !current_graph->has_status(ACYCLIC)) {
+        io::print_error("Для подсчета маршрутов граф должен быть "
+                        "ориентированным и ациклическим");
+        io::wait_enter();
+        return;
+    }
+
+    int start = io::read_number({0, current_graph->get_size() - 1},
+                                "Введите индекс начальной вершины");
+    int end = io::read_number({0, current_graph->get_size() - 1},
+                              "Введите индекс конечной вершины");
+
+    unsigned long long routes = current_graph->count_routes(
+        static_cast<size_t>(start), static_cast<size_t>(end));
+
+    string text;
+    if (routes == 0) {
+        text = "Маршруты между заданными вершинами отсутствуют";
+    } else {
+        text = "Количество маршрутов: " + std::to_string(routes);
+    }
+
+    io::print_text_with_header(text, "Результат проверки маршрутов", "", BOXED,
+                               GREEN);
+    io::wait_enter();
+}

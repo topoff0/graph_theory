@@ -82,6 +82,8 @@ void app::handle_start_work_menu(int choice) {
         break;
     case 8:
         menu_func::StartWorkMenu::run_shimbell_method();
+    case 9:
+        menu_func::StartWorkMenu::check_routes();
 
     default:
         break;

@@ -471,3 +471,7 @@ matrix graph::run_shimbell(size_t edges, bool find_max) {
     }
     return result;
 }
+
+unsigned long long graph::count_routes(size_t start, size_t end) {
+
+}
