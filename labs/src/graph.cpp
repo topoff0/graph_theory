@@ -155,6 +155,8 @@ void graph::generate_weight_matrix(const WeightMode mode) {
 
             case NEGATIVE:
                 w = -std::abs(w);
+                if (w == 0)
+                    w = -1;
                 break;
 
             case MIXED:
@@ -425,10 +427,16 @@ vector<char> graph::calc_diametral_vertices() {
 }
 
 matrix graph::run_shimbell(size_t edges, bool find_max) {
-    if (edges == 1)
-        return weights;
+    matrix exact_step_weights = weights;
 
-    matrix result = weights;
+    for (size_t i = 0; i < n; i++)
+        if (adj.at(i, i) == 0)
+            exact_step_weights.at(i, i) = INT_MAX;
+
+    if (edges == 1)
+        return exact_step_weights;
+
+    matrix result = exact_step_weights;
     matrix temp(n, n);
 
     for (size_t step = 2; step <= edges; step++) {
@@ -444,10 +452,10 @@ matrix graph::run_shimbell(size_t edges, bool find_max) {
                 for (size_t k = 0; k < n; k++) {
 
                     if (result.at(i, k) == INT_MAX ||
-                        weights.at(k, j) == INT_MAX)
+                        exact_step_weights.at(k, j) == INT_MAX)
                         continue;
 
-                    int value = result.at(i, k) + weights.at(k, j);
+                    int value = result.at(i, k) + exact_step_weights.at(k, j);
 
                     if (find_max) {
                         if (value > temp.at(i, j))

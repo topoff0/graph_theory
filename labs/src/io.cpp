@@ -308,7 +308,7 @@ void io::print_matrix(const matrix &mat, const string &header, COLOR clr) {
         for (size_t j = 0; j < cols; ++j) {
             double val = mat.at(i, j);
             string s;
-            if (val == INT_MAX)
+            if (val == INT_MAX || val == INT_MIN)
                 s = "∞";
             else if (val == static_cast<int>(val))
                 s = std::to_string(static_cast<int>(val));
@@ -344,7 +344,7 @@ void io::print_matrix(const matrix &mat, const string &header, COLOR clr) {
         for (size_t j = 0; j < cols; ++j) {
             double val = mat.at(i, j);
             string s;
-            if (val == INT_MAX)
+            if (val == INT_MAX || val == INT_MIN)
                 s = "∞";
             else if (val == static_cast<int>(val))
                 s = std::to_string(static_cast<int>(val));
