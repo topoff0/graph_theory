@@ -473,5 +473,54 @@ matrix graph::run_shimbell(size_t edges, bool find_max) {
 }
 
 unsigned long long graph::count_routes(size_t start, size_t end) {
+    if (start >= n || end >= n)
+        return 0;
 
+    vector<unsigned long long> paths(n, 0);
+    vector<size_t> in(n, 0);
+
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            if (adj.at(i, j) == 1)
+                in[j]++;
+        }
+    }
+
+    queue<size_t> zero_in;
+    for (size_t i = 0; i < n; i++) {
+        if (in[i] == 0)
+            zero_in.push(i);
+    }
+
+    vector<size_t> t_order;
+    while (!zero_in.empty()) {
+        size_t v = zero_in.front();
+        zero_in.pop();
+        t_order.push_back(v);
+
+        for (size_t u = 0; u < n; u++) {
+            if (adj.at(v, u) == 1) {
+                in[u]--;
+                if (in[u] == 0)
+                    zero_in.push(u);
+            }
+        }
+    }
+
+    if (t_order.size() != n)
+        return 0;
+
+    paths[start] = 1;
+
+    for (size_t v : t_order) {
+        if (paths[v] == 0)
+            continue;
+
+        for (size_t u = 0; u < n; u++) {
+            if (adj.at(v, u) == 1)
+                paths[u] += paths[v];
+        }
+    }
+
+    return paths[end];
 }
