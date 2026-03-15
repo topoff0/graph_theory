@@ -87,7 +87,7 @@ void graph::generate_connected(const vector<int> &degrees) {
             vertices[i].first--;
         }
 
-        vertices.erase(vertices.begin());
+        vertices[0].first = 0;
     }
 }
 
@@ -240,17 +240,21 @@ graph::get_correct_degrees_for_connected_graph(const vector<int> &degrees) {
         sum_deg--;
     }
 
-    int min_sum = n - 1;
+    int min_sum = 2 * (n - 1);
     while (sum_deg < min_sum) {
         int min_idx = 0;
+        int min_idx2 = 0;
 
         for (int i = 1; i < correct_degrees.size(); i++) {
-            if (correct_degrees[i] < correct_degrees[min_idx])
+            if (correct_degrees[i] < correct_degrees[min_idx]) {
+                min_idx2 = min_idx;
                 min_idx = i;
+            }
         }
 
         correct_degrees[min_idx]++;
-        sum_deg++;
+        correct_degrees[min_idx2]++;
+        sum_deg+=2;
     }
 
 #if DEBUG
