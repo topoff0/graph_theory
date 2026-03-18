@@ -68,7 +68,7 @@ void app::handle_start_work_menu(int choice) {
         menu_func::StartWorkMenu::generate_weights_matrix();
         break;
     case 4:
-        menu_func::StartWorkMenu::make_graph_acyclic();
+        menu_func::StartWorkMenu::make_graph_tree();
         break;
     case 5:
         menu_func::StartWorkMenu::make_graph_oriented();

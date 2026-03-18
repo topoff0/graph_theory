@@ -5,8 +5,8 @@
 using std::pair;
 using std::vector;
 
-enum GraphStatus { NONE = 0, ACYCLIC = 1, ORIENTED = 2 };
-enum WeightMode { EMPTY = 0, POSITIVE = 1, NEGATIVE = 2, MIXED = 3 };
+enum GraphStatus { NONE = 0, ACYCLIC = 1, ORIENTED = 2, TREE = 4 };
+enum WeightMode { EMPTY = 0, POSITIVE = 1, NEGATIVE = 2, MIXED = 4 };
 
 class graph {
   private:

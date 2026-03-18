@@ -7,7 +7,7 @@ struct menu_func {
         static void generate_graph();
         static void generate_acyclic_oriented_graph();
         static void generate_weights_matrix();
-        static void make_graph_acyclic();
+        static void make_graph_tree();
         static void make_graph_oriented();
         static void calc_eccentricities();
         static void calc_centers();

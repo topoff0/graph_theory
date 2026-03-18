@@ -73,22 +73,21 @@ void menu_func::StartWorkMenu::generate_weights_matrix() {
     io::wait_enter();
 }
 
-void menu_func::StartWorkMenu::make_graph_acyclic() {
+void menu_func::StartWorkMenu::make_graph_tree() {
     if (!current_graph) {
         io::print_error("Сначала сгенерируйте граф");
         io::wait_enter();
         return;
     }
-
-    if (current_graph->has_status(ACYCLIC)) {
-        io::print_error("Граф уже ациклический");
+    if (current_graph->has_status(TREE)) {
+        io::print_error("Текущий граф уже является деревом");
         io::wait_enter();
         return;
     }
 
     current_graph->make_graph_acyclic_not_oriented();
 
-    io::print_header("Граф скорректирован: ациклический", BOLD);
+    io::print_header("Граф скорректирован: дерево", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
 
     io::wait_enter();
