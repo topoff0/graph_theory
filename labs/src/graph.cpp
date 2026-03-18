@@ -14,7 +14,7 @@ using std::queue;
 graph::graph(size_t vertices)
     : n(vertices), adj(vertices, vertices), weights(vertices, vertices) {}
 
-void graph::generate_tree(const vector<int> &degrees) {
+void graph::generate_tree_from_degrees(const vector<int> &degrees) {
     adj.clear();
     vector<int> deg = degrees;
 
@@ -60,7 +60,7 @@ void graph::generate_tree(const vector<int> &degrees) {
     }
 }
 
-void graph::generate_connected(const vector<int> &degrees) {
+void graph::generate_connected_graph_from_degrees(const vector<int> &degrees) {
     adj.clear();
 
     vector<pair<int, int>> vertices;
@@ -91,6 +91,20 @@ void graph::generate_connected(const vector<int> &degrees) {
     }
 }
 
+void graph::generate_DAG_from_degrees(const vector<int> &degrees) {
+    adj.clear();
+
+    for (int i = 0; i < n; i++) {
+        int edges = degrees[i];
+        int available = n - i - 1;
+
+        for (int k = 0; k < edges; k++) {
+            int j = i + 1 + (k * 3) % available;
+            adj.at(i, j) = 1;
+        }
+    }
+}
+
 void graph::restore_graph_from_oriented() {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
@@ -100,7 +114,7 @@ void graph::restore_graph_from_oriented() {
     }
 }
 
-void graph::generate_graph() {
+void graph::generate_connected_graph() {
     distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
     vector<double> deg_values = dist.sample(n);
 
@@ -115,13 +129,62 @@ void graph::generate_graph() {
     for (int d : deg)
         sum_deg += d;
     if (sum_deg == 2 * (n - 1)) {
-        generate_tree(deg);
+        generate_tree_from_degrees(deg);
         set_status(ACYCLIC);
     } else {
-        generate_connected(deg);
+        generate_connected_graph_from_degrees(deg);
         clear_all_statuses();
     }
 }
+
+void graph::generate_DAG() {
+    clear_all_statuses();
+
+    distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
+    vector<double> deg_values = dist.sample(n);
+
+    vector<int> degrees(n, 0);
+    for (size_t i = 0; i < n; i++) {
+        degrees[i] = static_cast<int>(std::round(deg_values[i]));
+    }
+#if DEBUG
+    string before = "[ ";
+    for (int i = 0; i < degrees.size(); i++) {
+        before.append(std::to_string(degrees[i]));
+        if (i != degrees.size() - 1)
+            before.append(", ");
+    }
+    before.append(" ]");
+
+    io::print_text_with_header(before, "DEBUG: Степени до корректировки (DAG)",
+                               "", BOXED, YELLOW);
+#endif
+
+    vector<int> correct_degrees = degrees;
+    size_t sz = correct_degrees.size();
+
+    for (size_t i = 0; i < sz; i++) {
+        correct_degrees[i] = std::max(0, correct_degrees[i]);
+        correct_degrees[i] = std::min(correct_degrees[i], (int)(sz - i - 1));
+    }
+#if DEBUG
+    string after = "[ ";
+    for (int i = 0; i < correct_degrees.size(); i++) {
+        after.append(std::to_string(correct_degrees[i]));
+        if (i != correct_degrees.size() - 1)
+            after.append(", ");
+    }
+    after.append(" ]");
+
+    io::print_text_with_header(after, "DEBUG: Степени до корректировки (DAG)",
+                               "", BOXED, YELLOW);
+#endif
+
+    generate_DAG_from_degrees(correct_degrees);
+    set_status(ORIENTED);
+    set_status(ACYCLIC);
+}
+
 void graph::generate_weight_matrix(const WeightMode mode) {
     set_weight_mode(mode);
 
@@ -176,7 +239,7 @@ void graph::generate_weight_matrix(const WeightMode mode) {
     }
 }
 
-void graph::make_graph_acyclic() {
+void graph::make_graph_acyclic_not_oriented() {
     if (has_status(ORIENTED)) {
         restore_graph_from_oriented();
         clear_status(ORIENTED);
@@ -189,7 +252,7 @@ void graph::make_graph_acyclic() {
     }
 
     vector<int> deg = get_correct_degrees_for_acyclic_graph(degrees);
-    generate_tree(deg);
+    generate_tree_from_degrees(deg);
     set_status(ACYCLIC);
 }
 
@@ -254,7 +317,7 @@ graph::get_correct_degrees_for_connected_graph(const vector<int> &degrees) {
 
         correct_degrees[min_idx]++;
         correct_degrees[min_idx2]++;
-        sum_deg+=2;
+        sum_deg += 2;
     }
 
 #if DEBUG

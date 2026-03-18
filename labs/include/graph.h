@@ -23,8 +23,10 @@ class graph {
     vector<int>
     get_correct_degrees_for_acyclic_graph(const vector<int> &degrees);
 
-    void generate_tree(const vector<int> &degrees);
-    void generate_connected(const vector<int> &degrees);
+    void generate_connected_graph_from_degrees(const vector<int> &degrees);
+    void generate_DAG_from_degrees(const vector<int> &degrees);
+    void generate_tree_from_degrees(const vector<int> &degrees);
+
     void restore_graph_from_oriented();
 
     void set_status(GraphStatus s) { status |= s; }
@@ -34,10 +36,11 @@ class graph {
   public:
     graph(size_t vertices);
 
-    void generate_graph();
+    void generate_connected_graph();
+    void generate_DAG();
     void generate_weight_matrix(WeightMode mode);
 
-    void make_graph_acyclic();
+    void make_graph_acyclic_not_oriented();
     void make_graph_oriented();
 
     bool has_status(GraphStatus s) const { return status & s; }

@@ -23,14 +23,31 @@ void menu_func::MainMenu::test_distribution() {
 
 void menu_func::StartWorkMenu::generate_graph() {
     size_t n;
-    n = io::read_number({2, 15}, "Введите количество вершин");
+    n = io::read_number({2, MAX_VERTICES_COUNT}, "Введите количество вершин");
 
     if (current_graph != nullptr)
         delete current_graph;
 
     current_graph = new graph(n);
 
-    current_graph->generate_graph();
+    current_graph->generate_connected_graph();
+
+    io::print_header("Сгенерирован граф", BOLD);
+    io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
+
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::generate_acyclic_oriented_graph() {
+    size_t n;
+    n = io::read_number({2, MAX_VERTICES_COUNT}, "Введите количество вершин");
+
+    if (current_graph != nullptr)
+        delete current_graph;
+
+    current_graph = new graph(n);
+
+    current_graph->generate_DAG();
 
     io::print_header("Сгенерирован граф", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
@@ -69,7 +86,7 @@ void menu_func::StartWorkMenu::make_graph_acyclic() {
         return;
     }
 
-    current_graph->make_graph_acyclic();
+    current_graph->make_graph_acyclic_not_oriented();
 
     io::print_header("Граф скорректирован: ациклический", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);

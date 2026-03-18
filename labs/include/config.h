@@ -21,6 +21,8 @@
 #define WEIGHT_MU 0.0 // центр распределения
 #define WEIGHT_ALPHA 0.5 // масштаб (крутизна) распределения
 
+#define MAX_VERTICES_COUNT 25
+
 // === CONSTANT WORDS ===
 #define ERROR_WORD "ОШИБКА"
 
