@@ -131,8 +131,8 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
                 text.append(", ");
         }
         text.append(" ]");
-        string header =
-            "DEBUG: Расстояние до вершин от вершины {" + std::to_string(i) + "}";
+        string header = "DEBUG: Расстояние до вершин от вершины {" +
+                        std::to_string(i) + "}";
         io::print_text_with_header(text, header, "", BOXED, YELLOW);
     }
 #endif
@@ -210,8 +210,8 @@ void menu_func::StartWorkMenu::run_shimbell_method() {
         return;
     }
 
-    int edges =
-        io::read_number({0, current_graph->get_size() - 1}, "Введите число ребер");
+    int edges = io::read_number({0, current_graph->get_size() - 1},
+                                "Введите число ребер");
     io::print_command_menu(SHIMBELL_MIN_MAX_MENU, "Выбирите вариант пути");
     int mode_number = io::read_number(menu_min_max_id(SHIMBELL_MIN_MAX_MENU),
                                       "Введите номер варианта");
@@ -266,5 +266,41 @@ void menu_func::StartWorkMenu::check_routes() {
 
     io::print_text_with_header(text, "Результат проверки маршрутов", "", BOXED,
                                GREEN);
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::edges_bfs() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+
+    int start = io::read_number({0, current_graph->get_size() - 1},
+                                "Введите индекс начальной вершины");
+
+    vector<pair<int, int>> edges =
+        current_graph->bfs_edges(static_cast<size_t>(start));
+
+    string text = "[ ";
+
+    for (size_t i = 0; i < edges.size(); i++) {
+        text += "(" + std::to_string(edges[i].first) + ", " +
+                std::to_string(edges[i].second) + ")";
+
+        if (i != edges.size() - 1)
+            text += ", ";
+    }
+
+    text += " ]";
+
+#if DEBUG
+    io::print_matrix(current_graph->get_adj(),
+                     "DEBUG: Матрица смежности для проверки", YELLOW);
+#endif
+
+    io::print_text_with_header(text, "Обход рёбер графа (BFS)", "", BOXED,
+                               GREEN);
+
     io::wait_enter();
 }

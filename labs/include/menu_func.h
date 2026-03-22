@@ -14,6 +14,7 @@ struct menu_func {
         static void calc_diameter();
         static void run_shimbell_method();
         static void check_routes();
+        static void edges_bfs();
     };
 
     static void back_to_main_menu(bool &back);

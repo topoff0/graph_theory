@@ -624,3 +624,31 @@ unsigned long long graph::count_routes(size_t start, size_t end) {
 
     return paths[end];
 }
+
+vector<pair<int, int>> graph::bfs_edges(int start) {
+    vector<pair<int, int>> result;
+    vector<bool> visited(n, false);
+    queue<int> q;
+
+    visited[start] = true;
+    q.push(start);
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (int v = 0; v < n; v++) {
+            if (adj.at(u, v) == 0)
+                continue;
+
+            result.emplace_back(u, v);
+
+            if (!visited[v]) {
+                visited[v] = true;
+                q.push(v);
+            }
+        }
+    }
+
+    return result;
+}

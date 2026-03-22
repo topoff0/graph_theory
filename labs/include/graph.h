@@ -56,6 +56,8 @@ class graph {
 
     matrix run_shimbell(size_t edges, bool find_max);
 
+    vector<pair<int, int>> bfs_edges(int start);
+
     unsigned long long count_routes(size_t start, size_t end);
 
     int degree(size_t v) const;

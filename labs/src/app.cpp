@@ -88,6 +88,9 @@ void app::handle_start_work_menu(int choice) {
     case 10:
         menu_func::StartWorkMenu::check_routes();
         break;
+        case 11:
+        menu_func::StartWorkMenu::edges_bfs();
+        break;
 
     default:
         break;

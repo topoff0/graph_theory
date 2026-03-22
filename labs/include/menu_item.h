@@ -44,6 +44,7 @@ static const vector<menu_item> START_WORK_MENU = {
     {8, "Выделить диаметральные вершины графа", BASE},
     {9, "Метод Шимбелла", BASE},
     {10, "Проверить маршруты между вершинами", BASE},
+    {11, "Выполнить обход ребер графа поиском в ширину", BASE},
     {0, "Завершить работу", RED}};
 
 static const vector<menu_item> WEIGHT_MODE_MENU = {
