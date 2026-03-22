@@ -211,7 +211,7 @@ void menu_func::StartWorkMenu::run_shimbell_method() {
     }
 
     int edges =
-        io::read_number({0, current_graph->get_size()}, "Введите число ребер");
+        io::read_number({0, current_graph->get_size() - 1}, "Введите число ребер");
     io::print_command_menu(SHIMBELL_MIN_MAX_MENU, "Выбирите вариант пути");
     int mode_number = io::read_number(menu_min_max_id(SHIMBELL_MIN_MAX_MENU),
                                       "Введите номер варианта");
@@ -259,6 +259,10 @@ void menu_func::StartWorkMenu::check_routes() {
     } else {
         text = "Количество маршрутов: " + std::to_string(routes);
     }
+#if DEBUG
+    io::print_matrix(current_graph->get_adj(),
+                     "DEBUG: Матрица смежности для проверки", YELLOW);
+#endif
 
     io::print_text_with_header(text, "Результат проверки маршрутов", "", BOXED,
                                GREEN);
