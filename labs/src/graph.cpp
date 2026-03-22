@@ -93,21 +93,36 @@ void graph::generate_connected_graph_from_degrees(const vector<int> &degrees) {
 
 void graph::generate_DAG_from_degrees(const vector<int> &degrees) {
     adj.clear();
-
     std::mt19937 rng(static_cast<unsigned>(time(0)));
+    vector<int> used(n, 0);
+
+    for (int i = 0; i < n - 1; i++) {
+        adj.at(i, i + 1) = 1;
+        used[i] = 1;
+    }
 
     for (int i = 0; i < n; i++) {
-        int edges = degrees[i];
+        int need = degrees[i] - used[i];
         int available = n - i - 1;
 
-        if (edges == 0 || available == 0)
+        if (need <= 0 || available <= 0)
             continue;
 
-        int offset = rng() % available;
+        vector<int> candidates;
+        for (int j = i + 1; j < n; j++) {
+            if (adj.at(i, j) == 0)
+                candidates.push_back(j);
+        }
 
-        for (int k = 0; k < edges; k++) {
-            int j = i + 1 + (offset + k) % available;
-            adj.at(i, j) = 1;
+        if (candidates.empty())
+            continue;
+
+        std::shuffle(candidates.begin(), candidates.end(), rng);
+
+        int take = std::min(need, (int)candidates.size());
+
+        for (int k = 0; k < take; k++) {
+            adj.at(i, candidates[k]) = 1;
         }
     }
 }
