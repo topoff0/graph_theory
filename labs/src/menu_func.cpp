@@ -120,20 +120,32 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
         io::wait_enter();
         return;
     }
-    int index = io::read_number({0, current_graph->get_size() - 1},
-                                "Введите индекс вершины");
 
-    vector<int> ecc = current_graph->calc_ecc(index);
-
+#if DEBUG
+    for (int i = 0; i < current_graph->get_size(); i++) {
+        vector<int> dist = current_graph->calc_distances(i);
+        string text = "[ ";
+        for (int i = 0; i < dist.size(); i++) {
+            text.append(std::to_string(dist[i]));
+            if (i != dist.size() - 1)
+                text.append(", ");
+        }
+        text.append(" ]");
+        string header =
+            "DEBUG: Расстояние до вершин от вершины {" + std::to_string(i) + "}";
+        io::print_text_with_header(text, header, "", BOXED, YELLOW);
+    }
+#endif
+    vector<int> ecc = current_graph->calc_ecc();
     string text = "[ ";
     for (int i = 0; i < ecc.size(); i++) {
-        text.append(std::to_string(ecc[i]));
+        string text_ecc = ecc[i] == INT_MAX ? "∞" : std::to_string(ecc[i]);
+        text.append(text_ecc);
         if (i != ecc.size() - 1)
             text.append(", ");
     }
     text.append(" ]");
-
-    io::print_text_with_header(text, "Эксцентрисететы графа", "", BOXED, GREEN);
+    io::print_text_with_header(text, "Эксцентриситеты графа", "", BOXED, GREEN);
     io::wait_enter();
 }
 void menu_func::StartWorkMenu::calc_centers() {
@@ -199,7 +211,7 @@ void menu_func::StartWorkMenu::run_shimbell_method() {
     }
 
     int edges =
-        io::read_number({1, current_graph->get_size()}, "Введите число ребер");
+        io::read_number({0, current_graph->get_size()}, "Введите число ребер");
     io::print_command_menu(SHIMBELL_MIN_MAX_MENU, "Выбирите вариант пути");
     int mode_number = io::read_number(menu_min_max_id(SHIMBELL_MIN_MAX_MENU),
                                       "Введите номер варианта");

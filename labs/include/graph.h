@@ -49,7 +49,8 @@ class graph {
     void set_weight_mode(WeightMode m) { mode |= m; }
     void clear_all_weight_modes() { mode = EMPTY; }
 
-    vector<int> calc_ecc(int start);
+    vector<int> calc_distances(int start);
+    vector<int> calc_ecc();
     vector<char> calc_central_vertices();
     vector<char> calc_diametral_vertices();
 

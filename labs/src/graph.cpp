@@ -171,7 +171,7 @@ void graph::generate_DAG() {
     size_t sz = correct_degrees.size();
 
     for (size_t i = 0; i < sz; i++) {
-        correct_degrees[i] = std::max(0, correct_degrees[i]);
+        correct_degrees[i] = std::max(1, correct_degrees[i]);
         correct_degrees[i] = std::min(correct_degrees[i], (int)(sz - i - 1));
     }
 #if DEBUG
@@ -183,8 +183,8 @@ void graph::generate_DAG() {
     }
     after.append(" ]");
 
-    io::print_text_with_header(after, "DEBUG: Степени до корректировки (DAG)",
-                               "", BOXED, YELLOW);
+    io::print_text_with_header(
+        after, "DEBUG: Степени после корректировки (DAG)", "", BOXED, YELLOW);
 #endif
 
     generate_DAG_from_degrees(correct_degrees);
@@ -422,11 +422,11 @@ int graph::degree(size_t v) const {
     return d;
 }
 
-vector<int> graph::calc_ecc(int start) {
-    vector<int> eccentricities(n, -1);
+vector<int> graph::calc_distances(int start) {
+    vector<int> dist(n, -1);
     queue<int> q;
 
-    eccentricities[start] = 0;
+    dist[start] = 0;
     q.push(start);
 
     while (!q.empty()) {
@@ -434,35 +434,44 @@ vector<int> graph::calc_ecc(int start) {
         q.pop();
 
         for (int u = 0; u < n; u++) {
-            if (adj.at(v, u) == 1 && eccentricities[u] == -1) {
-                eccentricities[u] = eccentricities[v] + 1;
+            if (adj.at(v, u) == 1 && dist[u] == -1) {
+                dist[u] = dist[v] + 1;
                 q.push(u);
             }
         }
+    }
+
+    return dist;
+}
+
+vector<int> graph::calc_ecc() {
+    vector<int> eccentricities(n);
+
+    for (int i = 0; i < n; i++) {
+        vector<int> dist = calc_distances(i);
+
+        int ecc = 0;
+        for (int d : dist) {
+            if (d == -1) {
+                ecc = INT_MAX;
+                break;
+            }
+            ecc = max(ecc, d);
+        }
+
+        eccentricities[i] = ecc;
     }
 
     return eccentricities;
 }
 
 vector<char> graph::calc_central_vertices() {
-    int radius = INT_MAX;
-    vector<int> eccentricities(n);
+    vector<int> eccentricities = calc_ecc();
     vector<char> result(n);
 
-    for (int i = 0; i < n; i++) {
-        vector<int> current_eccentircities = calc_ecc(i);
-        int eccentricity = 0;
-
-        for (int j = 0; j < n; j++) {
-            if (current_eccentircities[j] == -1) {
-                eccentricity = INT_MAX;
-                break;
-            }
-            eccentricity = max(eccentricity, current_eccentircities[j]);
-        }
-
-        radius = min(radius, eccentricity);
-        eccentricities[i] = eccentricity;
+    int radius = INT_MAX;
+    for (int ecc : eccentricities) {
+        radius = min(radius, ecc);
     }
 
     for (int i = 0; i < n; i++) {
@@ -473,24 +482,12 @@ vector<char> graph::calc_central_vertices() {
 }
 
 vector<char> graph::calc_diametral_vertices() {
-    int diameter = 0;
-    vector<int> eccentricities(n);
+    vector<int> eccentricities = calc_ecc();
     vector<char> result(n);
 
-    for (int i = 0; i < n; i++) {
-        vector<int> dist = calc_ecc(i);
-        int eccentricity = 0;
-
-        for (int j = 0; j < n; j++) {
-            if (dist[j] == -1) {
-                eccentricity = INT_MAX;
-                break;
-            }
-            eccentricity = max(eccentricity, dist[j]);
-        }
-
-        eccentricities[i] = eccentricity;
-        diameter = max(diameter, eccentricity);
+    int diameter = 0;
+    for (int ecc : eccentricities) {
+        diameter = max(diameter, ecc);
     }
 
     for (int i = 0; i < n; i++) {
@@ -501,6 +498,20 @@ vector<char> graph::calc_diametral_vertices() {
 }
 
 matrix graph::run_shimbell(size_t edges, bool find_max) {
+    if (edges == 0) {
+        matrix zero_step(n, n);
+
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = 0; j < n; j++) {
+                if (i == j)
+                    zero_step.at(i, j) = 0;
+                else
+                    zero_step.at(i, j) = INT_MAX;
+            }
+        }
+        return zero_step;
+    }
+
     matrix exact_step_weights = weights;
 
     for (size_t i = 0; i < n; i++)
