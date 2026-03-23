@@ -135,6 +135,8 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
                         std::to_string(i) + "}";
         io::print_text_with_header(text, header, "", BOXED, YELLOW);
     }
+
+    io::print_matrix(current_graph->get_adj(), "DEBUG: Матрица смежности для проверки", YELLOW);
 #endif
     vector<int> ecc = current_graph->calc_ecc();
     string text = "[ ";

@@ -468,8 +468,7 @@ vector<int> graph::calc_ecc() {
         int ecc = 0;
         for (int d : dist) {
             if (d == -1) {
-                ecc = INT_MAX;
-                break;
+                continue;
             }
             ecc = max(ecc, d);
         }
