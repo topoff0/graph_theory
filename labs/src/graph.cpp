@@ -659,53 +659,64 @@ vector<pair<int, int>> graph::bfs_edges(int start,
 vector<int> graph::bellman_ford(int start, vector<int> &parent,
                                 unsigned long long &iterations,
                                 bool &has_negative_cycle) {
+    struct edge {
+        size_t from;
+        size_t to;
+        int weight;
+    };
+
     vector<int> dist(n, INT_MAX);
     parent.assign(n, -1);
     iterations = 0;
     has_negative_cycle = false;
 
+    vector<edge> edges;
+    edges.reserve(n * n);
+    for (size_t u = 0; u < n; u++) {
+        for (size_t v = 0; v < n; v++) {
+            if (adj.at(u, v) == 0 || weights.at(u, v) == INT_MAX)
+                continue;
+
+            edges.push_back({u, v, static_cast<int>(weights.at(u, v))});
+        }
+    }
+
     dist[start] = 0;
 
     for (size_t step = 1; step < n; step++) {
-        bool flag = false;
+        // bool flag = false;
 
-        for (size_t u = 0; u < n; u++) {
-            for (size_t v = 0; v < n; v++) {
-                iterations++;
+        for (const edge &e : edges) {
+            iterations++;
 
-                if (adj.at(u, v) == 0 || dist[u] == INT_MAX ||
-                    weights.at(u, v) == INT_MAX)
-                    continue;
+            if (dist[e.from] == INT_MAX)
+                continue;
 
-                int candidate = dist[u] + static_cast<int>(weights.at(u, v));
-                // Есть ли улучшение
-                if (candidate < dist[v]) {
-                    dist[v] = candidate;
-                    parent[v] = static_cast<int>(u);
-                    flag = true;
-                }
+            int candidate = dist[e.from] + e.weight;
+            // Есть ли улучшение
+            if (candidate < dist[e.to]) {
+                dist[e.to] = candidate;
+                parent[e.to] = static_cast<int>(e.from);
+                // flag = true;
             }
         }
 
-        if (!flag)
-            break;
+        // if (!flag)
+        //     break;
     }
-    if (has_status(ACYCLIC))
-        return dist;
+    // if (has_status(ACYCLIC))
+    //     return dist;
 
-    for (size_t u = 0; u < n; u++) {
-        for (size_t v = 0; v < n; v++) {
-            iterations++;
+    for (const edge &e : edges) {
+        iterations++;
 
-            if (adj.at(u, v) == 0 || dist[u] == INT_MAX ||
-                weights.at(u, v) == INT_MAX)
-                continue;
+        if (dist[e.from] == INT_MAX)
+            continue;
 
-            int candidate = dist[u] + static_cast<int>(weights.at(u, v));
-            if (candidate < dist[v]) {
-                has_negative_cycle = true;
-                return dist;
-            }
+        int candidate = dist[e.from] + e.weight;
+        if (candidate < dist[e.to]) {
+            has_negative_cycle = true;
+            return dist;
         }
     }
 

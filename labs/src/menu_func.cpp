@@ -385,5 +385,11 @@ void menu_func::StartWorkMenu::shortest_path_bellman_ford() {
                                    std::to_string(bellman_iterations),
                                "Беллман-Форд", "", BOXED, CYAN);
 
+#if DEBUG
+    io::print_matrix(current_graph->get_weights(),
+                     "DEBUG: Весовая матрица для проверки", YELLOW);
+
+#endif
+
     io::wait_enter();
 }
