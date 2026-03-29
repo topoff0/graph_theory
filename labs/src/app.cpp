@@ -16,7 +16,7 @@ void app::run() {
     while (_running) {
         _back = false;
         main_menu.show(MAIN_MENU, "Список команд");
-int choice = io::read_number(menu_min_max_id(MAIN_MENU),
+        int choice = io::read_number(menu_min_max_id(MAIN_MENU),
                                      "Введите номер команды");
         handle_main_menu(choice);
     }
@@ -88,8 +88,11 @@ void app::handle_start_work_menu(int choice) {
     case 10:
         menu_func::StartWorkMenu::check_routes();
         break;
-        case 11:
+    case 11:
         menu_func::StartWorkMenu::edges_bfs();
+        break;
+    case 12:
+        menu_func::StartWorkMenu::shortest_path_bellman_ford();
         break;
 
     default:

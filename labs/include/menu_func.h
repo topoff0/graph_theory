@@ -15,6 +15,7 @@ struct menu_func {
         static void run_shimbell_method();
         static void check_routes();
         static void edges_bfs();
+        static void shortest_path_bellman_ford();
     };
 
     static void back_to_main_menu(bool &back);

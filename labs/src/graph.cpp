@@ -624,10 +624,12 @@ unsigned long long graph::count_routes(size_t start, size_t end) {
     return paths[end];
 }
 
-vector<pair<int, int>> graph::bfs_edges(int start) {
+vector<pair<int, int>> graph::bfs_edges(int start,
+                                        unsigned long long &iterations) {
     vector<pair<int, int>> result;
     vector<bool> visited(n, false);
     queue<int> q;
+    iterations = 0;
 
     visited[start] = true;
     q.push(start);
@@ -637,6 +639,8 @@ vector<pair<int, int>> graph::bfs_edges(int start) {
         q.pop();
 
         for (int v = 0; v < n; v++) {
+            iterations++;
+
             if (adj.at(u, v) == 0)
                 continue;
 
@@ -650,4 +654,60 @@ vector<pair<int, int>> graph::bfs_edges(int start) {
     }
 
     return result;
+}
+
+vector<int> graph::bellman_ford(int start, vector<int> &parent,
+                                unsigned long long &iterations,
+                                bool &has_negative_cycle) {
+    vector<int> dist(n, INT_MAX);
+    parent.assign(n, -1);
+    iterations = 0;
+    has_negative_cycle = false;
+
+    dist[start] = 0;
+
+    for (size_t step = 1; step < n; step++) {
+        bool flag = false;
+
+        for (size_t u = 0; u < n; u++) {
+            for (size_t v = 0; v < n; v++) {
+                iterations++;
+
+                if (adj.at(u, v) == 0 || dist[u] == INT_MAX ||
+                    weights.at(u, v) == INT_MAX)
+                    continue;
+
+                int candidate = dist[u] + static_cast<int>(weights.at(u, v));
+                // Есть ли улучшение
+                if (candidate < dist[v]) {
+                    dist[v] = candidate;
+                    parent[v] = static_cast<int>(u);
+                    flag = true;
+                }
+            }
+        }
+
+        if (!flag)
+            break;
+    }
+    if (has_status(ACYCLIC))
+        return dist;
+
+    for (size_t u = 0; u < n; u++) {
+        for (size_t v = 0; v < n; v++) {
+            iterations++;
+
+            if (adj.at(u, v) == 0 || dist[u] == INT_MAX ||
+                weights.at(u, v) == INT_MAX)
+                continue;
+
+            int candidate = dist[u] + static_cast<int>(weights.at(u, v));
+            if (candidate < dist[v]) {
+                has_negative_cycle = true;
+                return dist;
+            }
+        }
+    }
+
+    return dist;
 }

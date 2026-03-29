@@ -136,7 +136,8 @@ void menu_func::StartWorkMenu::calc_eccentricities() {
         io::print_text_with_header(text, header, "", BOXED, YELLOW);
     }
 
-    io::print_matrix(current_graph->get_adj(), "DEBUG: Матрица смежности для проверки", YELLOW);
+    io::print_matrix(current_graph->get_adj(),
+                     "DEBUG: Матрица смежности для проверки", YELLOW);
 #endif
     vector<int> ecc = current_graph->calc_ecc();
     string text = "[ ";
@@ -281,8 +282,9 @@ void menu_func::StartWorkMenu::edges_bfs() {
     int start = io::read_number({0, current_graph->get_size() - 1},
                                 "Введите индекс начальной вершины");
 
+    unsigned long long iterations = 0;
     vector<pair<int, int>> edges =
-        current_graph->bfs_edges(static_cast<size_t>(start));
+        current_graph->bfs_edges(static_cast<size_t>(start), iterations);
 
     string text = "[ ";
 
@@ -303,6 +305,85 @@ void menu_func::StartWorkMenu::edges_bfs() {
 
     io::print_text_with_header(text, "Обход рёбер графа (BFS)", "", BOXED,
                                GREEN);
+
+    io::print_text_with_header("Количество итераций: " +
+                                   std::to_string(iterations),
+                               "BFS", "", BOXED, CYAN);
+
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::shortest_path_bellman_ford() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+    if (current_graph->is_weight_mode(EMPTY)) {
+        io::print_error("Сначала сгенерируйте весовую матрицу");
+        io::wait_enter();
+        return;
+    }
+
+    int start = io::read_number({0, current_graph->get_size() - 1},
+                                "Введите индекс начальной вершины");
+    int end = io::read_number({0, current_graph->get_size() - 1},
+                              "Введите индекс конечной вершины");
+
+    vector<int> parent;
+    unsigned long long bellman_iterations = 0;
+    bool has_negative_cycle = false;
+
+    vector<int> dist = current_graph->bellman_ford(
+        start, parent, bellman_iterations, has_negative_cycle);
+
+    if (has_negative_cycle) {
+        io::print_error(
+            "В графе найден отрицательный цикл: кратчайшие пути не определены");
+        io::wait_enter();
+        return;
+    }
+
+    string dist_text = "[ ";
+    for (size_t i = 0; i < dist.size(); i++) {
+        if (dist[i] == INT_MAX)
+            dist_text += "∞";
+        else
+            dist_text += std::to_string(dist[i]);
+
+        if (i != dist.size() - 1)
+            dist_text += ", ";
+    }
+    dist_text += " ]";
+
+    io::print_text_with_header(dist_text, "Вектор расстояний (Беллман-Форд)",
+                               "", BOXED, GREEN);
+
+    if (dist[end] == INT_MAX) {
+        io::print_text_with_header("Путь между вершинами отсутствует",
+                                   "Кратчайший путь", "", BOXED, YELLOW);
+    } else {
+        vector<int> path;
+        for (int v = end; v != -1; v = parent[v])
+            path.push_back(v);
+        std::reverse(path.begin(), path.end());
+
+        string path_text = "[ ";
+        for (size_t i = 0; i < path.size(); i++) {
+            path_text += std::to_string(path[i]);
+            if (i + 1 != path.size())
+                path_text += " -> ";
+        }
+        path_text += " ]";
+
+        io::print_text_with_header(path_text,
+                                   "Путь: длина = " + std::to_string(dist[end]),
+                                   "", BOXED, GREEN);
+    }
+
+    io::print_text_with_header("Количество итераций: " +
+                                   std::to_string(bellman_iterations),
+                               "Беллман-Форд", "", BOXED, CYAN);
 
     io::wait_enter();
 }

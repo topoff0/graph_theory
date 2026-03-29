@@ -45,6 +45,7 @@ static const vector<menu_item> START_WORK_MENU = {
     {9, "Метод Шимбелла", BASE},
     {10, "Проверить маршруты между вершинами", BASE},
     {11, "Выполнить обход ребер графа поиском в ширину", BASE},
+    {12, "Найти кратчайший путь (Беллман-Форд)", BASE},
     {0, "Завершить работу", RED}};
 
 static const vector<menu_item> WEIGHT_MODE_MENU = {
@@ -53,5 +54,4 @@ static const vector<menu_item> WEIGHT_MODE_MENU = {
     {3, "Смешанные значения", BASE}};
 
 static const vector<menu_item> SHIMBELL_MIN_MAX_MENU = {
-    {1, "Минимальный путь", BASE},
-    {2, "Максимальный путь", BASE}};
+    {1, "Минимальный путь", BASE}, {2, "Максимальный путь", BASE}};

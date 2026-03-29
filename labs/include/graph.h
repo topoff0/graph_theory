@@ -56,7 +56,10 @@ class graph {
 
     matrix run_shimbell(size_t edges, bool find_max);
 
-    vector<pair<int, int>> bfs_edges(int start);
+    vector<pair<int, int>> bfs_edges(int start, unsigned long long &iterations);
+    vector<int> bellman_ford(int start, vector<int> &parent,
+                             unsigned long long &iterations,
+                             bool &has_negative_cycle);
 
     unsigned long long count_routes(size_t start, size_t end);
 
