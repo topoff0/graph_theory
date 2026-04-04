@@ -684,7 +684,7 @@ vector<int> graph::bellman_ford(int start, vector<int> &parent,
     dist[start] = 0;
 
     for (size_t step = 1; step < n; step++) {
-        // bool flag = false;
+        bool flag = false;
 
         for (const edge &e : edges) {
             iterations++;
@@ -697,15 +697,15 @@ vector<int> graph::bellman_ford(int start, vector<int> &parent,
             if (candidate < dist[e.to]) {
                 dist[e.to] = candidate;
                 parent[e.to] = static_cast<int>(e.from);
-                // flag = true;
+                flag = true;
             }
         }
 
-        // if (!flag)
-        //     break;
+        if (!flag)
+            break;
     }
-    // if (has_status(ACYCLIC))
-    //     return dist;
+    if (has_status(ACYCLIC))
+        return dist;
 
     for (const edge &e : edges) {
         iterations++;
