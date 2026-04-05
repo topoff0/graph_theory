@@ -73,6 +73,27 @@ void menu_func::StartWorkMenu::generate_weights_matrix() {
     io::wait_enter();
 }
 
+void menu_func::StartWorkMenu::generate_flow_matrices() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте ориентированный граф");
+        io::wait_enter();
+        return;
+    }
+    if (!current_graph->has_status(ORIENTED)) {
+        io::print_error("Граф должен быть ориентированным");
+        io::wait_enter();
+        return;
+    }
+
+    current_graph->generate_flow_matrices();
+    io::print_header(
+        "Сгенерированы матрицы пропускных способностей и стоимости", BOLD);
+    io::print_matrix(current_graph->get_throughtputs(),
+                     "Матрица пропускных способностей", CYAN);
+    io::print_matrix(current_graph->get_costs(), "Матрица стоимости", CYAN);
+    io::wait_enter();
+}
+
 void menu_func::StartWorkMenu::make_graph_tree() {
     if (!current_graph) {
         io::print_error("Сначала сгенерируйте граф");
@@ -391,5 +412,80 @@ void menu_func::StartWorkMenu::shortest_path_bellman_ford() {
 
 #endif
 
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::find_max_flow() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+    if (!current_graph->has_status(ORIENTED) ||
+        !current_graph->has_status(ACYCLIC)) {
+        io::print_error("Для расчета потока граф должен быть ориентированным и "
+                        "ациклическим");
+        io::wait_enter();
+        return;
+    }
+    if (!current_graph->has_flow_matrices()) {
+        io::print_error("Сначала сгенерируйте матрицы пропускных способностей "
+                        "и стоимости");
+        io::wait_enter();
+        return;
+    }
+
+    int source = io::read_number({0, current_graph->get_size() - 1},
+                                 "Введите индекс вершины-истока");
+    int sink = io::read_number({0, current_graph->get_size() - 1},
+                               "Введите индекс вершины-стока");
+
+    int max_flow = current_graph->max_flow_ford_fulkerson(source, sink);
+
+    io::print_text_with_header("Максимальный поток: " +
+                                   std::to_string(max_flow),
+                               "Форд-Фалкерсон", "", BOXED, GREEN);
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::find_min_cost_flow() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+
+    if (!current_graph->has_status(ORIENTED) ||
+        !current_graph->has_status(ACYCLIC)) {
+        io::print_error("Для расчета потока граф должен быть ориентированным и "
+                        "ациклическим");
+        io::wait_enter();
+        return;
+    }
+    if (!current_graph->has_flow_matrices()) {
+        io::print_error("Сначала сгенерируйте матрицы пропускных способностей "
+                        "и стоимости");
+        io::wait_enter();
+        return;
+    }
+
+    int source = io::read_number({0, current_graph->get_size() - 1},
+                                 "Введите индекс вершины-истока");
+    int sink = io::read_number({0, current_graph->get_size() - 1},
+                               "Введите индекс вершины-стока");
+
+    int max_flow = current_graph->max_flow_ford_fulkerson(source, sink);
+    int target_flow = (2 * max_flow) / 3;
+
+    unsigned long long min_cost_iterations = 0;
+    pair<int, int> result =
+        current_graph->min_cost_flow(source, sink, target_flow);
+
+    string text = "Требуемый поток: " + std::to_string(target_flow) +
+                  "\nФактически отправлен: " + std::to_string(result.first) +
+                  "\nМинимальная стоимость: " + std::to_string(result.second);
+
+    io::print_text_with_header(text, "Поток минимальной стоимости", "", BOXED,
+                               GREEN);
     io::wait_enter();
 }

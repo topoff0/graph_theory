@@ -68,33 +68,41 @@ void app::handle_start_work_menu(int choice) {
         menu_func::StartWorkMenu::generate_weights_matrix();
         break;
     case 4:
-        menu_func::StartWorkMenu::make_graph_tree();
+        menu_func::StartWorkMenu::generate_flow_matrices();
         break;
     case 5:
-        menu_func::StartWorkMenu::make_graph_oriented();
+        menu_func::StartWorkMenu::make_graph_tree();
         break;
     case 6:
-        menu_func::StartWorkMenu::calc_eccentricities();
+        menu_func::StartWorkMenu::make_graph_oriented();
         break;
     case 7:
-        menu_func::StartWorkMenu::calc_centers();
+        menu_func::StartWorkMenu::calc_eccentricities();
         break;
     case 8:
-        menu_func::StartWorkMenu::calc_diameter();
+        menu_func::StartWorkMenu::calc_centers();
         break;
     case 9:
-        menu_func::StartWorkMenu::run_shimbell_method();
+        menu_func::StartWorkMenu::calc_diameter();
         break;
     case 10:
-        menu_func::StartWorkMenu::check_routes();
+        menu_func::StartWorkMenu::run_shimbell_method();
         break;
     case 11:
-        menu_func::StartWorkMenu::edges_bfs();
+        menu_func::StartWorkMenu::check_routes();
         break;
     case 12:
+        menu_func::StartWorkMenu::edges_bfs();
+        break;
+    case 13:
         menu_func::StartWorkMenu::shortest_path_bellman_ford();
         break;
-
+    case 14:
+        menu_func::StartWorkMenu::find_max_flow();
+        break;
+    case 15:
+        menu_func::StartWorkMenu::find_min_cost_flow();
+        break;
     default:
         break;
     }

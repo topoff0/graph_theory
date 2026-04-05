@@ -7,6 +7,7 @@ struct menu_func {
         static void generate_graph();
         static void generate_acyclic_oriented_graph();
         static void generate_weights_matrix();
+        static void generate_flow_matrices();
         static void make_graph_tree();
         static void make_graph_oriented();
         static void calc_eccentricities();
@@ -16,6 +17,8 @@ struct menu_func {
         static void check_routes();
         static void edges_bfs();
         static void shortest_path_bellman_ford();
+        static void find_max_flow();
+        static void find_min_cost_flow();
     };
 
     static void back_to_main_menu(bool &back);

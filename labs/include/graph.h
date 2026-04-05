@@ -14,9 +14,13 @@ class graph {
 
     matrix adj;
     matrix weights;
+    matrix throughputs;
+    matrix costs;
 
     int status;
     int mode;
+
+    bool flow_matrices_generated;
 
     vector<int>
     get_correct_degrees_for_connected_graph(const vector<int> &degrees);
@@ -33,12 +37,17 @@ class graph {
     void clear_status(GraphStatus s) { status &= ~s; }
     void clear_all_statuses() { status = NONE; }
 
+    void invalidate_flow_matrices() { flow_matrices_generated = false; }
+
   public:
     graph(size_t vertices);
 
     void generate_connected_graph();
     void generate_DAG();
     void generate_weight_matrix(WeightMode mode);
+    void generate_flow_matrices();
+
+    bool has_flow_matrices() const { return flow_matrices_generated; }
 
     void make_graph_acyclic_not_oriented();
     void make_graph_oriented();
@@ -60,6 +69,8 @@ class graph {
     vector<int> bellman_ford(int start, vector<int> &parent,
                              unsigned long long &iterations,
                              bool &has_negative_cycle);
+    int max_flow_ford_fulkerson(int source, int sink);
+    pair<int, int> min_cost_flow(int source, int sink, int target_flow);
 
     unsigned long long count_routes(size_t start, size_t end);
 
@@ -67,4 +78,6 @@ class graph {
     matrix get_adj() const { return adj; }
     matrix get_weights() const { return weights; }
     size_t get_size() const { return n; }
+    matrix get_throughtputs() const { return throughputs; }
+    matrix get_costs() const { return costs; }
 };
