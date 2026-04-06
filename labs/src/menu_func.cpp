@@ -73,7 +73,7 @@ void menu_func::StartWorkMenu::generate_weights_matrix() {
     io::wait_enter();
 }
 
-void menu_func::StartWorkMenu::generate_flow_matrices() {
+void menu_func::StartWorkMenu::generate_throughputs_matrix() {
     if (!current_graph) {
         io::print_error("Сначала сгенерируйте ориентированный граф");
         io::wait_enter();
@@ -85,11 +85,28 @@ void menu_func::StartWorkMenu::generate_flow_matrices() {
         return;
     }
 
-    current_graph->generate_flow_matrices();
-    io::print_header(
-        "Сгенерированы матрицы пропускных способностей и стоимости", BOLD);
+    current_graph->generate_throughputs_matrix();
+    io::print_header("Сгенерированы матрица пропускных способностей", BOLD);
     io::print_matrix(current_graph->get_throughtputs(),
                      "Матрица пропускных способностей", CYAN);
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::generate_costs_matrix() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте ориентированный граф");
+        io::wait_enter();
+        return;
+    }
+    if (!current_graph->has_status(ORIENTED)) {
+        io::print_error("Граф должен быть ориентированным");
+        io::wait_enter();
+        return;
+    }
+
+    current_graph->generate_costs_matrix();
+    io::print_header(
+        "Сгенерированы матрица стоимости", BOLD);
     io::print_matrix(current_graph->get_costs(), "Матрица стоимости", CYAN);
     io::wait_enter();
 }

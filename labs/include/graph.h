@@ -20,7 +20,8 @@ class graph {
     int status;
     int mode;
 
-    bool flow_matrices_generated;
+    bool throughputs_matrix_generated;
+    bool costs_matrix_generated;
 
     vector<int>
     get_correct_degrees_for_connected_graph(const vector<int> &degrees);
@@ -37,7 +38,10 @@ class graph {
     void clear_status(GraphStatus s) { status &= ~s; }
     void clear_all_statuses() { status = NONE; }
 
-    void invalidate_flow_matrices() { flow_matrices_generated = false; }
+    void invalidate_flow_matrices() {
+        throughputs_matrix_generated = false;
+        costs_matrix_generated = false;
+    }
 
   public:
     graph(size_t vertices);
@@ -45,9 +49,12 @@ class graph {
     void generate_connected_graph();
     void generate_DAG();
     void generate_weight_matrix(WeightMode mode);
-    void generate_flow_matrices();
+    void generate_throughputs_matrix();
+    void generate_costs_matrix();
 
-    bool has_flow_matrices() const { return flow_matrices_generated; }
+    bool has_flow_matrices() const {
+        return throughputs_matrix_generated && costs_matrix_generated;
+    }
 
     void make_graph_acyclic_not_oriented();
     void make_graph_oriented();

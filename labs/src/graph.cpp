@@ -14,7 +14,7 @@ using std::queue;
 graph::graph(size_t vertices)
     : n(vertices), adj(vertices, vertices), weights(vertices, vertices),
       throughputs(vertices, vertices), costs(vertices, vertices), status(NONE),
-      mode(EMPTY), flow_matrices_generated(false) {}
+      mode(EMPTY), throughputs_matrix_generated(false), costs_matrix_generated(false) {}
 
 void graph::generate_tree_from_degrees(const vector<int> &degrees) {
     adj.clear();
@@ -266,38 +266,48 @@ void graph::generate_weight_matrix(const WeightMode mode) {
     }
 }
 
-void graph::generate_flow_matrices() {
-    distribution capacity_dist(THROUGHPUT_MU, THROUGHPUT_ALPHA,
-                               static_cast<unsigned int>(time(0)));
-    distribution cost_dist(COST_MU, COST_ALPHA,
-                           static_cast<unsigned int>(time(0) + 1));
-
+void graph::generate_throughputs_matrix() {
+    distribution throughputs_dist(THROUGHPUT_MU, THROUGHPUT_ALPHA,
+                                  static_cast<unsigned int>(time(0)));
     throughputs.clear();
-    costs.clear();
-
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
             if (i == j || adj.at(i, j) == 0) {
                 throughputs.at(i, j) = 0;
-                costs.at(i, j) = INT_MAX;
                 continue;
             }
 
-            int capacity =
-                std::abs(static_cast<int>(std::round(capacity_dist.sample())));
-            if (capacity == 0)
-                capacity = 1;
+            int throughput = std::abs(
+                static_cast<int>(std::round(throughputs_dist.sample())));
+            if (throughput == 0)
+                throughput = 1;
+
+            throughputs.at(i, j) = throughput;
+        }
+    }
+    throughputs_matrix_generated = true;
+}
+
+void graph::generate_costs_matrix() {
+    distribution cost_dist(COST_MU, COST_ALPHA,
+                           static_cast<unsigned int>(time(0) + 1));
+    costs.clear();
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            if (i == j || adj.at(i, j) == 0) {
+                costs.at(i, j) = INT_MAX;
+                continue;
+            }
 
             int cost =
                 std::abs(static_cast<int>(std::round(cost_dist.sample())));
             if (cost == 0)
                 cost = 1;
 
-            throughputs.at(i, j) = capacity;
             costs.at(i, j) = cost;
         }
     }
-    flow_matrices_generated = true;
+    costs_matrix_generated = true;
 }
 
 void graph::make_graph_acyclic_not_oriented() {
