@@ -14,7 +14,8 @@ using std::queue;
 graph::graph(size_t vertices)
     : n(vertices), adj(vertices, vertices), weights(vertices, vertices),
       throughputs(vertices, vertices), costs(vertices, vertices), status(NONE),
-      mode(EMPTY), throughputs_matrix_generated(false), costs_matrix_generated(false) {}
+      mode(EMPTY), throughputs_matrix_generated(false),
+      costs_matrix_generated(false) {}
 
 void graph::generate_tree_from_degrees(const vector<int> &degrees) {
     adj.clear();
@@ -779,10 +780,10 @@ int graph::max_flow_ford_fulkerson(int source, int sink) {
     if (source < 0 || sink < 0 || source >= n || sink >= n || source == sink)
         return 0;
 
-    vector<vector<int>> residual(n, vector<int>(n, 0));
+    vector<vector<int>> capacity_left(n, vector<int>(n, 0));
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
-            residual[i][j] = static_cast<int>(throughputs.at(i, j));
+            capacity_left[i][j] = static_cast<int>(throughputs.at(i, j));
         }
     }
 
@@ -799,7 +800,7 @@ int graph::max_flow_ford_fulkerson(int source, int sink) {
             q.pop();
 
             for (size_t v = 0; v < n; v++) {
-                if (parent[v] != -1 || residual[u][v] <= 0)
+                if (parent[v] != -1 || capacity_left[u][v] <= 0)
                     continue;
                 parent[v] = u;
                 q.push(v);
@@ -809,19 +810,19 @@ int graph::max_flow_ford_fulkerson(int source, int sink) {
         if (parent[sink] == -1)
             break;
 
-        int bottleneck = INT_MAX;
+        int flow_to_add = INT_MAX;
         for (int v = sink; v != source; v = parent[v]) {
             int u = parent[v];
-            bottleneck = min(bottleneck, residual[u][v]);
+            flow_to_add = min(flow_to_add, capacity_left[u][v]);
         }
 
         for (int v = sink; v != source; v = parent[v]) {
             int u = parent[v];
-            residual[u][v] -= bottleneck;
-            residual[v][u] += bottleneck;
+            capacity_left[u][v] -= flow_to_add;
+            capacity_left[v][u] += flow_to_add;
         }
 
-        max_flow += bottleneck;
+        max_flow += flow_to_add;
     }
 
     return max_flow;
@@ -831,15 +832,15 @@ pair<int, int> graph::min_cost_flow(int source, int sink, int target_flow) {
     if (source < 0 || sink < 0 || source >= n || sink >= n || source == sink)
         return {0, 0};
 
-    vector<vector<int>> residual_cap(n, vector<int>(n, 0));
-    vector<vector<int>> residual_cost(n, vector<int>(n, INT_MAX));
+    vector<vector<int>> capacity_left(n, vector<int>(n, 0));
+    vector<vector<int>> cost(n, vector<int>(n, INT_MAX));
 
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
-            residual_cap[i][j] = static_cast<int>(throughputs.at(i, j));
+            capacity_left[i][j] = static_cast<int>(throughputs.at(i, j));
             if (adj.at(i, j) == 1) {
-                residual_cost[i][j] = static_cast<int>(costs.at(i, j));
-                residual_cost[j][i] = -static_cast<int>(costs.at(i, j));
+                cost[i][j] = static_cast<int>(costs.at(i, j));
+                cost[j][i] = -static_cast<int>(costs.at(i, j));
             }
         }
     }
@@ -848,29 +849,28 @@ pair<int, int> graph::min_cost_flow(int source, int sink, int target_flow) {
     int total_cost = 0;
 
     while (flow < target_flow) {
-        vector<int> dist(n, INT_MAX);
+        vector<int> min_costs(n, INT_MAX);
         vector<int> parent(n, -1);
-        dist[source] = 0;
+        min_costs[source] = 0;
 
         for (size_t step = 0; step < n - 1; step++) {
-            bool updated = false;
+            bool flag = false;
             for (size_t u = 0; u < n; u++) {
-                if (dist[u] == INT_MAX)
+                if (min_costs[u] == INT_MAX)
                     continue;
                 for (size_t v = 0; v < n; v++) {
-                    if (residual_cap[u][v] <= 0 ||
-                        residual_cost[u][v] == INT_MAX)
+                    if (capacity_left[u][v] <= 0 || cost[u][v] == INT_MAX)
                         continue;
 
-                    int candidate = dist[u] + residual_cost[u][v];
-                    if (candidate < dist[v]) {
-                        dist[v] = candidate;
+                    int candidate = min_costs[u] + cost[u][v];
+                    if (candidate < min_costs[v]) {
+                        min_costs[v] = candidate;
                         parent[v] = static_cast<int>(u);
-                        updated = true;
+                        flag = true;
                     }
                 }
             }
-            if (!updated)
+            if (!flag)
                 break;
         }
 
@@ -880,14 +880,14 @@ pair<int, int> graph::min_cost_flow(int source, int sink, int target_flow) {
         int add = target_flow - flow;
         for (int v = sink; v != source; v = parent[v]) {
             int u = parent[v];
-            add = min(add, residual_cap[u][v]);
+            add = min(add, capacity_left[u][v]);
         }
 
         for (int v = sink; v != source; v = parent[v]) {
             int u = parent[v];
-            residual_cap[u][v] -= add;
-            residual_cap[v][u] += add;
-            total_cost += add * residual_cost[u][v];
+            capacity_left[u][v] -= add;
+            capacity_left[v][u] += add;
+            total_cost += add * cost[u][v];
         }
 
         flow += add;

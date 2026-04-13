@@ -105,8 +105,7 @@ void menu_func::StartWorkMenu::generate_costs_matrix() {
     }
 
     current_graph->generate_costs_matrix();
-    io::print_header(
-        "Сгенерированы матрица стоимости", BOLD);
+    io::print_header("Сгенерированы матрица стоимости", BOLD);
     io::print_matrix(current_graph->get_costs(), "Матрица стоимости", CYAN);
     io::wait_enter();
 }
@@ -459,6 +458,10 @@ void menu_func::StartWorkMenu::find_max_flow() {
 
     int max_flow = current_graph->max_flow_ford_fulkerson(source, sink);
 
+#if DEBUG
+    io::print_matrix(current_graph->get_throughtputs(),
+                     "DEBUG: Матрица пропускных способностей", YELLOW);
+#endif
     io::print_text_with_header("Максимальный поток: " +
                                    std::to_string(max_flow),
                                "Форд-Фалкерсон", "", BOXED, GREEN);
@@ -501,6 +504,15 @@ void menu_func::StartWorkMenu::find_min_cost_flow() {
     string text = "Требуемый поток: " + std::to_string(target_flow) +
                   "\nФактически отправлен: " + std::to_string(result.first) +
                   "\nМинимальная стоимость: " + std::to_string(result.second);
+
+#if DEBUG
+    io::print_matrix(current_graph->get_throughtputs(),
+                     "DEBUG: Матрица пропускных способностей", YELLOW);
+#endif
+#if DEBUG
+    io::print_matrix(current_graph->get_costs(),
+                     "DEBUG: Матрица стоимости", YELLOW);
+#endif
 
     io::print_text_with_header(text, "Поток минимальной стоимости", "", BOXED,
                                GREEN);
