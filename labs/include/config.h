@@ -26,7 +26,7 @@
 #define COST_MU 3.0    // центр распределения стоимости
 #define COST_ALPHA 1.8 // масштаб распределения стоимости
 
-#define MAX_VERTICES_COUNT 25
+#define MAX_VERTICES_COUNT 20
 
 // === CONSTANT WORDS ===
 #define ERROR_WORD "ОШИБКА"

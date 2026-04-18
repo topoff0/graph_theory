@@ -367,14 +367,10 @@ void menu_func::StartWorkMenu::shortest_path_bellman_ford() {
     int end = io::read_number({0, current_graph->get_size() - 1},
                               "Введите индекс конечной вершины");
 
-    vector<int> parent;
-    unsigned long long bellman_iterations = 0;
-    bool has_negative_cycle = false;
+    algorithm_result result = current_graph->bellman_ford(
+        start, &current_graph->get_weights(), &current_graph->get_adj());
 
-    vector<int> dist = current_graph->bellman_ford(
-        start, parent, bellman_iterations, has_negative_cycle);
-
-    if (has_negative_cycle) {
+    if (result.has_negative_cycle) {
         io::print_error(
             "В графе найден отрицательный цикл: кратчайшие пути не определены");
         io::wait_enter();
@@ -382,13 +378,13 @@ void menu_func::StartWorkMenu::shortest_path_bellman_ford() {
     }
 
     string dist_text = "[ ";
-    for (size_t i = 0; i < dist.size(); i++) {
-        if (dist[i] == INT_MAX)
+    for (size_t i = 0; i < result.distances.size(); i++) {
+        if (result.distances[i] == INT_MAX)
             dist_text += "∞";
         else
-            dist_text += std::to_string(dist[i]);
+            dist_text += std::to_string(result.distances[i]);
 
-        if (i != dist.size() - 1)
+        if (i != result.distances.size() - 1)
             dist_text += ", ";
     }
     dist_text += " ]";
@@ -396,12 +392,12 @@ void menu_func::StartWorkMenu::shortest_path_bellman_ford() {
     io::print_text_with_header(dist_text, "Вектор расстояний (Беллман-Форд)",
                                "", BOXED, GREEN);
 
-    if (dist[end] == INT_MAX) {
+    if (result.distances[end] == INT_MAX) {
         io::print_text_with_header("Путь между вершинами отсутствует",
                                    "Кратчайший путь", "", BOXED, YELLOW);
     } else {
         vector<int> path;
-        for (int v = end; v != -1; v = parent[v])
+        for (int v = end; v != -1; v = result.parent[v])
             path.push_back(v);
         std::reverse(path.begin(), path.end());
 
@@ -413,13 +409,13 @@ void menu_func::StartWorkMenu::shortest_path_bellman_ford() {
         }
         path_text += " ]";
 
-        io::print_text_with_header(path_text,
-                                   "Путь: длина = " + std::to_string(dist[end]),
-                                   "", BOXED, GREEN);
+        io::print_text_with_header(
+            path_text, "Путь: длина = " + std::to_string(result.distances[end]),
+            "", BOXED, GREEN);
     }
 
     io::print_text_with_header("Количество итераций: " +
-                                   std::to_string(bellman_iterations),
+                                   std::to_string(result.iterations),
                                "Беллман-Форд", "", BOXED, CYAN);
 
 #if DEBUG
@@ -496,25 +492,43 @@ void menu_func::StartWorkMenu::find_min_cost_flow() {
 
     int max_flow = current_graph->max_flow_ford_fulkerson(source, sink);
     int target_flow = (2 * max_flow) / 3;
+    if (target_flow == 0) {
+        io::print_error("Требуемый поток получился равным 0. Увеличьте максимальный поток.");
+        io::wait_enter();
+        return;
+    }
 
-    unsigned long long min_cost_iterations = 0;
-    pair<int, int> result =
+    algorithm_result result =
         current_graph->min_cost_flow(source, sink, target_flow);
 
-    string text = "Требуемый поток: " + std::to_string(target_flow) +
-                  "\nФактически отправлен: " + std::to_string(result.first) +
-                  "\nМинимальная стоимость: " + std::to_string(result.second);
+    if (result.has_negative_cycle) {
+        io::print_error("В остаточной сети найден отрицательный цикл");
+        io::wait_enter();
+        return;
+    }
+
+    string text =
+        "Требуемый поток: " + std::to_string(target_flow) +
+        "\nФактически отправлен: " + std::to_string(result.flow) +
+        "\nМинимальная стоимость: " + std::to_string(result.total_cost);
+
+    if (result.flow < target_flow)
+        text += "\nНе удалось полностью провести требуемый поток";
 
 #if DEBUG
     io::print_matrix(current_graph->get_throughtputs(),
                      "DEBUG: Матрица пропускных способностей", YELLOW);
 #endif
 #if DEBUG
-    io::print_matrix(current_graph->get_costs(),
-                     "DEBUG: Матрица стоимости", YELLOW);
+    io::print_matrix(current_graph->get_costs(), "DEBUG: Матрица стоимости",
+                     YELLOW);
 #endif
 
     io::print_text_with_header(text, "Поток минимальной стоимости", "", BOXED,
                                GREEN);
+
+    io::print_text_with_header(result.log, "Расчет минимальной стоимости", "",
+                               BOXED, CYAN);
+
     io::wait_enter();
 }

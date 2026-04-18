@@ -1,12 +1,25 @@
 #pragma once
 #include "matrix.h"
+#include <string>
 #include <vector>
 
 using std::pair;
+using std::string;
 using std::vector;
 
 enum GraphStatus { NONE = 0, ACYCLIC = 1, ORIENTED = 2, TREE = 4 };
 enum WeightMode { EMPTY = 0, POSITIVE = 1, NEGATIVE = 2, MIXED = 4 };
+
+struct algorithm_result {
+    vector<int> distances;
+    vector<int> parent;
+    vector<int> path;
+    int flow = 0;
+    int total_cost = 0;
+    unsigned long long iterations = 0;
+    bool has_negative_cycle = false;
+    string log;
+};
 
 class graph {
   private:
@@ -73,18 +86,19 @@ class graph {
     matrix run_shimbell(size_t edges, bool find_max);
 
     vector<pair<int, int>> bfs_edges(int start, unsigned long long &iterations);
-    vector<int> bellman_ford(int start, vector<int> &parent,
-                             unsigned long long &iterations,
-                             bool &has_negative_cycle);
+    algorithm_result bellman_ford(int start,
+                                  const matrix *edge_params,
+                                  const matrix *available_edges,
+                                  bool skip_negative_cycle_check = false);
     int max_flow_ford_fulkerson(int source, int sink);
-    pair<int, int> min_cost_flow(int source, int sink, int target_flow);
+    algorithm_result min_cost_flow(int source, int sink, int target_flow);
 
     unsigned long long count_routes(size_t start, size_t end);
 
     int degree(size_t v) const;
-    matrix get_adj() const { return adj; }
-    matrix get_weights() const { return weights; }
+    const matrix& get_adj() const { return adj; }
+    const matrix& get_weights() const { return weights; }
     size_t get_size() const { return n; }
-    matrix get_throughtputs() const { return throughputs; }
-    matrix get_costs() const { return costs; }
+    const matrix& get_throughtputs() const { return throughputs; }
+    const matrix& get_costs() const { return costs; }
 };

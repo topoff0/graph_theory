@@ -11,6 +11,43 @@ using std::min;
 using std::pair;
 using std::queue;
 
+namespace {
+
+vector<int> restore_path(int source, int target, const vector<int> &parent) {
+    if (source < 0 || target < 0 || source >= parent.size() ||
+        target >= parent.size())
+        return {};
+
+    vector<int> path;
+    for (int v = target; v != -1; v = parent[v]) {
+        path.push_back(v);
+        if (v == source)
+            break;
+    }
+
+    if (path.empty() || path.back() != source)
+        return {};
+
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+string path_to_string(const vector<int> &path) {
+    if (path.empty())
+        return "[ ]";
+
+    string text = "[ ";
+    for (size_t i = 0; i < path.size(); i++) {
+        text += std::to_string(path[i]);
+        if (i + 1 != path.size())
+            text += " -> ";
+    }
+    text += " ]";
+    return text;
+}
+
+} // namespace
+
 graph::graph(size_t vertices)
     : n(vertices), adj(vertices, vertices), weights(vertices, vertices),
       throughputs(vertices, vertices), costs(vertices, vertices), status(NONE),
@@ -709,47 +746,47 @@ vector<pair<int, int>> graph::bfs_edges(int start,
     return result;
 }
 
-vector<int> graph::bellman_ford(int start, vector<int> &parent,
-                                unsigned long long &iterations,
-                                bool &has_negative_cycle) {
+algorithm_result graph::bellman_ford(int start, const matrix *edge_params,
+                                     const matrix *available_edges,
+                                     bool skip_negative_cycle_check) {
     struct edge {
         size_t from;
         size_t to;
         int weight;
     };
 
-    vector<int> dist(n, INT_MAX);
-    parent.assign(n, -1);
-    iterations = 0;
-    has_negative_cycle = false;
+    algorithm_result result;
+    result.distances.assign(n, INT_MAX);
+    result.parent.assign(n, -1);
 
     vector<edge> edges;
     edges.reserve(n * n);
     for (size_t u = 0; u < n; u++) {
         for (size_t v = 0; v < n; v++) {
-            if (adj.at(u, v) == 0 || weights.at(u, v) == INT_MAX)
+            if (available_edges->at(u, v) == 0 ||
+                edge_params->at(u, v) == INT_MAX)
                 continue;
 
-            edges.push_back({u, v, static_cast<int>(weights.at(u, v))});
+            edges.push_back({u, v, static_cast<int>(edge_params->at(u, v))});
         }
     }
 
-    dist[start] = 0;
+    result.distances[start] = 0;
 
     for (size_t step = 1; step < n; step++) {
         bool flag = false;
 
         for (const edge &e : edges) {
-            iterations++;
+            result.iterations++;
 
-            if (dist[e.from] == INT_MAX)
+            if (result.distances[e.from] == INT_MAX)
                 continue;
 
-            int candidate = dist[e.from] + e.weight;
+            int candidate = result.distances[e.from] + e.weight;
             // Есть ли улучшение
-            if (candidate < dist[e.to]) {
-                dist[e.to] = candidate;
-                parent[e.to] = static_cast<int>(e.from);
+            if (candidate < result.distances[e.to]) {
+                result.distances[e.to] = candidate;
+                result.parent[e.to] = static_cast<int>(e.from);
                 flag = true;
             }
         }
@@ -757,23 +794,24 @@ vector<int> graph::bellman_ford(int start, vector<int> &parent,
         if (!flag)
             break;
     }
-    if (has_status(ACYCLIC))
-        return dist;
+
+    if (skip_negative_cycle_check)
+        return result;
 
     for (const edge &e : edges) {
-        iterations++;
+        result.iterations++;
 
-        if (dist[e.from] == INT_MAX)
+        if (result.distances[e.from] == INT_MAX)
             continue;
 
-        int candidate = dist[e.from] + e.weight;
-        if (candidate < dist[e.to]) {
-            has_negative_cycle = true;
-            return dist;
+        int candidate = result.distances[e.from] + e.weight;
+        if (candidate < result.distances[e.to]) {
+            result.has_negative_cycle = true;
+            return result;
         }
     }
 
-    return dist;
+    return result;
 }
 
 int graph::max_flow_ford_fulkerson(int source, int sink) {
@@ -828,70 +866,109 @@ int graph::max_flow_ford_fulkerson(int source, int sink) {
     return max_flow;
 }
 
-pair<int, int> graph::min_cost_flow(int source, int sink, int target_flow) {
+algorithm_result graph::min_cost_flow(int source, int sink, int target_flow) {
+    algorithm_result result;
+
     if (source < 0 || sink < 0 || source >= n || sink >= n || source == sink)
-        return {0, 0};
+        return result;
 
     vector<vector<int>> capacity_left(n, vector<int>(n, 0));
-    vector<vector<int>> cost(n, vector<int>(n, INT_MAX));
+    matrix r_costs(n, n);
+    matrix r_edges(n, n);
+
+    r_costs.fill(INT_MAX);
+    r_edges.clear();
 
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
             capacity_left[i][j] = static_cast<int>(throughputs.at(i, j));
             if (adj.at(i, j) == 1) {
-                cost[i][j] = static_cast<int>(costs.at(i, j));
-                cost[j][i] = -static_cast<int>(costs.at(i, j));
+                r_costs.at(i, j) = costs.at(i, j);
+                r_costs.at(j, i) = -costs.at(i, j);
             }
         }
     }
 
-    int flow = 0;
-    int total_cost = 0;
+    vector<string> step_logs;
+    vector<int> last_path;
+    int steps_count = 0;
 
-    while (flow < target_flow) {
-        vector<int> min_costs(n, INT_MAX);
-        vector<int> parent(n, -1);
-        min_costs[source] = 0;
+    if (target_flow == 0) {
+        result.log = "Требуемый поток равен 0";
+        return result;
+    }
 
-        for (size_t step = 0; step < n - 1; step++) {
-            bool flag = false;
-            for (size_t u = 0; u < n; u++) {
-                if (min_costs[u] == INT_MAX)
-                    continue;
-                for (size_t v = 0; v < n; v++) {
-                    if (capacity_left[u][v] <= 0 || cost[u][v] == INT_MAX)
-                        continue;
-
-                    int candidate = min_costs[u] + cost[u][v];
-                    if (candidate < min_costs[v]) {
-                        min_costs[v] = candidate;
-                        parent[v] = static_cast<int>(u);
-                        flag = true;
-                    }
+    while (result.flow < target_flow) {
+        r_edges.clear();
+        for (size_t u = 0; u < n; u++) {
+            for (size_t v = 0; v < n; v++) {
+                if (capacity_left[u][v] > 0 && r_costs.at(u, v) != INT_MAX) {
+                    r_edges.at(u, v) = 1;
                 }
             }
-            if (!flag)
-                break;
         }
 
-        if (parent[sink] == -1)
+        algorithm_result bellman_result =
+            bellman_ford(source, &r_costs, &r_edges);
+
+        if (bellman_result.has_negative_cycle) {
+            result.has_negative_cycle = true;
+            return result;
+        }
+
+        if (bellman_result.distances[sink] == INT_MAX)
             break;
 
-        int add = target_flow - flow;
-        for (int v = sink; v != source; v = parent[v]) {
-            int u = parent[v];
+        vector<int> path = restore_path(source, sink, bellman_result.parent);
+        if (path.empty())
+            break;
+
+        int add = target_flow - result.flow;
+        for (size_t i = 1; i < path.size(); i++) {
+            int u = path[i - 1];
+            int v = path[i];
             add = min(add, capacity_left[u][v]);
         }
 
-        for (int v = sink; v != source; v = parent[v]) {
-            int u = parent[v];
-            capacity_left[u][v] -= add;
-            capacity_left[v][u] += add;
-            total_cost += add * cost[u][v];
+        int path_cost = 0;
+        for (size_t i = 1; i < path.size(); i++) {
+            int u = path[i - 1];
+            int v = path[i];
+            path_cost += static_cast<int>(r_costs.at(u, v));
         }
 
-        flow += add;
+        for (size_t i = 1; i < path.size(); i++) {
+            int u = path[i - 1];
+            int v = path[i];
+            capacity_left[u][v] -= add;
+            capacity_left[v][u] += add;
+        }
+
+        result.flow += add;
+        result.total_cost += add * path_cost;
+        last_path = path;
+        steps_count++;
+
+        step_logs.push_back("Шаг " + std::to_string(steps_count) + ": путь " +
+                            path_to_string(path) + ", стоимость " +
+                            std::to_string(path_cost) + ", поток +" +
+                            std::to_string(add));
     }
 
-    return {flow, total_cost};
+    result.path = last_path;
+
+    if (step_logs.empty()) {
+        result.log = "Подходящий путь для отправки потока не найден";
+    } else {
+        for (const string &step_log : step_logs)
+            result.log += step_log + "\n";
+
+        if (steps_count > step_logs.size()) {
+            result.log += "\n...";
+            result.log += "\nПропущено шагов: " +
+                          std::to_string(steps_count - step_logs.size());
+        }
+    }
+
+    return result;
 }
