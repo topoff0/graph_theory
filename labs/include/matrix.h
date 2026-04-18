@@ -16,6 +16,8 @@ class matrix {
 
     void clear();
 
+    void fill(double value);
+
     size_t get_rows() const;
     size_t get_cols() const;
 };

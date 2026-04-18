@@ -15,5 +15,11 @@ void matrix::clear() {
             data[i][j] = 0.0;
 }
 
+void matrix::fill(double value) {
+    for (size_t i = 0; i < rows; i++)
+        for (size_t j = 0; j < cols; j++)
+            data[i][j] = value;
+}
+
 size_t matrix::get_rows() const { return rows; }
 size_t matrix::get_cols() const { return cols; }
