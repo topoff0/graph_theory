@@ -80,31 +80,43 @@ void app::handle_start_work_menu(int choice) {
         menu_func::StartWorkMenu::make_graph_oriented();
         break;
     case 8:
-        menu_func::StartWorkMenu::calc_eccentricities();
+        menu_func::StartWorkMenu::make_graph_not_oriented();
         break;
     case 9:
-        menu_func::StartWorkMenu::calc_centers();
+        menu_func::StartWorkMenu::calc_eccentricities();
         break;
     case 10:
-        menu_func::StartWorkMenu::calc_diameter();
+        menu_func::StartWorkMenu::calc_centers();
         break;
     case 11:
-        menu_func::StartWorkMenu::run_shimbell_method();
+        menu_func::StartWorkMenu::calc_diameter();
         break;
     case 12:
-        menu_func::StartWorkMenu::check_routes();
+        menu_func::StartWorkMenu::run_shimbell_method();
         break;
     case 13:
-        menu_func::StartWorkMenu::edges_bfs();
+        menu_func::StartWorkMenu::check_routes();
         break;
     case 14:
-        menu_func::StartWorkMenu::shortest_path_bellman_ford();
+        menu_func::StartWorkMenu::edges_bfs();
         break;
     case 15:
-        menu_func::StartWorkMenu::find_max_flow();
+        menu_func::StartWorkMenu::shortest_path_bellman_ford();
         break;
     case 16:
+        menu_func::StartWorkMenu::find_max_flow();
+        break;
+    case 17:
         menu_func::StartWorkMenu::find_min_cost_flow();
+        break;
+    case 18:
+        menu_func::StartWorkMenu::count_spanning_trees_kirchhoff();
+        break;
+    case 19:
+        menu_func::StartWorkMenu::build_mst_kruskal_and_prufer();
+        break;
+    case 20:
+        menu_func::StartWorkMenu::min_coloring_for_graph_or_mst();
         break;
     default:
         break;

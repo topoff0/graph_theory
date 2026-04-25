@@ -46,6 +46,34 @@ string path_to_string(const vector<int> &path) {
     return text;
 }
 
+bool is_safe_color(int v, int color, const vector<int> &colors,
+                   const matrix &adj) {
+    const int n = static_cast<int>(adj.get_rows());
+    for (int u = 0; u < n; u++) {
+        if (adj.at(v, u) != 0 && colors[u] == color)
+            return false;
+    }
+    return true;
+}
+
+bool color_backtracking(int v, int max_colors, vector<int> &colors,
+                        const matrix &adj) {
+    const int n = static_cast<int>(adj.get_rows());
+    if (v == n)
+        return true;
+
+    for (int color = 1; color <= max_colors; color++) {
+        if (!is_safe_color(v, color, colors, adj))
+            continue;
+        colors[v] = color;
+        if (color_backtracking(v + 1, max_colors, colors, adj))
+            return true;
+        colors[v] = 0;
+    }
+
+    return false;
+}
+
 } // namespace
 
 graph::graph(size_t vertices)
@@ -374,6 +402,16 @@ void graph::make_graph_oriented() {
             adj.at(i, j) = 0;
 
     set_status(ORIENTED);
+}
+
+void graph::make_graph_not_oriented() {
+    invalidate_flow_matrices();
+
+    if (!has_status(ORIENTED))
+        return;
+
+    restore_graph_from_oriented();
+    clear_status(ORIENTED);
 }
 
 vector<int>
@@ -978,4 +1016,276 @@ algorithm_result graph::min_cost_flow(int source, int sink, int target_flow) {
     }
 
     return result;
+}
+
+unsigned long long graph::count_spanning_trees_kirchhoff() const {
+    const int size = static_cast<int>(n);
+    if (size <= 1)
+        return 1;
+
+    vector<vector<long double>> laplacian(
+        size, vector<long double>(size, static_cast<long double>(0)));
+
+    for (int i = 0; i < size; i++) {
+        int degree_value = 0;
+        for (int j = 0; j < size; j++) {
+            if (adj.at(i, j) != 0) {
+                degree_value++;
+                if (i != j)
+                    laplacian[i][j] = -1;
+            }
+        }
+        laplacian[i][i] = degree_value;
+    }
+
+    const int minor_size = size - 1;
+    vector<vector<long double>> minor(minor_size,
+                                      vector<long double>(minor_size, 0));
+
+    for (int i = 0; i < minor_size; i++)
+        for (int j = 0; j < minor_size; j++)
+            minor[i][j] = laplacian[i][j];
+
+    long double det = 1.0L;
+    int sign = 1;
+    const long double eps = 1e-12L;
+
+    for (int col = 0; col < minor_size; col++) {
+        int pivot = col;
+        for (int row = col + 1; row < minor_size; row++) {
+            if (fabsl(minor[row][col]) > fabsl(minor[pivot][col]))
+                pivot = row;
+        }
+
+        if (fabsl(minor[pivot][col]) < eps)
+            return 0;
+
+        if (pivot != col) {
+            std::swap(minor[pivot], minor[col]);
+            sign *= -1;
+        }
+
+        long double pivot_value = minor[col][col];
+        det *= pivot_value;
+
+        for (int row = col + 1; row < minor_size; row++) {
+            long double factor = minor[row][col] / pivot_value;
+            for (int k = col; k < minor_size; k++)
+                minor[row][k] -= factor * minor[col][k];
+        }
+    }
+
+    det *= sign;
+    if (det < 0)
+        det = -det;
+
+    return static_cast<unsigned long long>(llround(det));
+}
+
+bool graph::build_mst_kruskal(matrix &mst_adj, matrix &mst_weights,
+                              vector<weighted_edge> &mst_edges,
+                              int &total_weight) const {
+    const int size = static_cast<int>(n);
+    vector<weighted_edge> edges;
+
+    for (int i = 0; i < size; i++) {
+        for (int j = i + 1; j < size; j++) {
+            if (adj.at(i, j) == 0 || weights.at(i, j) == INT_MAX)
+                continue;
+            edges.push_back({i, j, static_cast<int>(weights.at(i, j))});
+        }
+    }
+
+    std::sort(edges.begin(), edges.end(),
+              [](const weighted_edge &a, const weighted_edge &b) {
+                  if (a.weight != b.weight)
+                      return a.weight < b.weight;
+                  if (a.from != b.from)
+                      return a.from < b.from;
+                  return a.to < b.to;
+              });
+
+    vector<int> parent(size), rank(size, 0);
+    std::iota(parent.begin(), parent.end(), 0);
+
+    std::function<int(int)> dsu_find = [&](int v) {
+        if (parent[v] == v)
+            return v;
+        parent[v] = dsu_find(parent[v]);
+        return parent[v];
+    };
+
+    auto dsu_union = [&](int a, int b) {
+        a = dsu_find(a);
+        b = dsu_find(b);
+        if (a == b)
+            return false;
+        if (rank[a] < rank[b])
+            std::swap(a, b);
+        parent[b] = a;
+        if (rank[a] == rank[b])
+            rank[a]++;
+        return true;
+    };
+
+    mst_adj.clear();
+    mst_weights.fill(INT_MAX);
+    for (int i = 0; i < size; i++)
+        mst_weights.at(i, i) = 0;
+
+    total_weight = 0;
+    mst_edges.clear();
+
+    for (const weighted_edge &edge : edges) {
+        if (!dsu_union(edge.from, edge.to))
+            continue;
+
+        mst_adj.at(edge.from, edge.to) = 1;
+        mst_adj.at(edge.to, edge.from) = 1;
+        mst_weights.at(edge.from, edge.to) = edge.weight;
+        mst_weights.at(edge.to, edge.from) = edge.weight;
+
+        total_weight += edge.weight;
+        mst_edges.push_back(edge);
+
+        if (static_cast<int>(mst_edges.size()) == size - 1)
+            break;
+    }
+
+    return static_cast<int>(mst_edges.size()) == size - 1;
+}
+
+vector<prufer_item>
+graph::encode_prufer_with_weights(const matrix &tree_adj,
+                                  const matrix &tree_weights,
+                                  int &last_edge_weight) const {
+    const int size = static_cast<int>(tree_adj.get_rows());
+    vector<int> degree(size, 0);
+    vector<vector<int>> neighbors(size);
+
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (tree_adj.at(i, j) != 0) {
+                degree[i]++;
+                neighbors[i].push_back(j);
+            }
+        }
+    }
+
+    std::priority_queue<int, vector<int>, std::greater<int>> leaves;
+    for (int i = 0; i < size; i++)
+        if (degree[i] == 1)
+            leaves.push(i);
+
+    vector<prufer_item> code;
+    for (int step = 0; step < size - 2; step++) {
+        int leaf = leaves.top();
+        leaves.pop();
+
+        int neighbor = -1;
+        for (int v : neighbors[leaf]) {
+            if (degree[v] > 0) {
+                neighbor = v;
+                break;
+            }
+        }
+
+        int weight = static_cast<int>(tree_weights.at(leaf, neighbor));
+        code.push_back({neighbor, weight});
+
+        degree[leaf]--;
+        degree[neighbor]--;
+
+        if (degree[neighbor] == 1)
+            leaves.push(neighbor);
+    }
+
+    vector<int> left;
+    for (int i = 0; i < size; i++)
+        if (degree[i] == 1)
+            left.push_back(i);
+
+    last_edge_weight = static_cast<int>(tree_weights.at(left[0], left[1]));
+    return code;
+}
+
+void graph::decode_prufer_with_weights(const vector<prufer_item> &code,
+                                       int last_edge_weight,
+                                       matrix &decoded_adj,
+                                       matrix &decoded_weights) const {
+    const int size = static_cast<int>(decoded_adj.get_rows());
+
+    decoded_adj.clear();
+    decoded_weights.fill(INT_MAX);
+    for (int i = 0; i < size; i++)
+        decoded_weights.at(i, i) = 0;
+
+    vector<int> degree(size, 1);
+    for (const prufer_item &item : code)
+        degree[item.vertex]++;
+
+    std::priority_queue<int, vector<int>, std::greater<int>> leaves;
+    for (int i = 0; i < size; i++)
+        if (degree[i] == 1)
+            leaves.push(i);
+
+    for (const prufer_item &item : code) {
+        int leaf = leaves.top();
+        leaves.pop();
+
+        int vertex = item.vertex;
+        int weight = item.weight;
+
+        decoded_adj.at(leaf, vertex) = 1;
+        decoded_adj.at(vertex, leaf) = 1;
+        decoded_weights.at(leaf, vertex) = weight;
+        decoded_weights.at(vertex, leaf) = weight;
+
+        degree[leaf]--;
+        degree[vertex]--;
+
+        if (degree[vertex] == 1)
+            leaves.push(vertex);
+    }
+
+    vector<int> left;
+    for (int i = 0; i < size; i++)
+        if (degree[i] == 1)
+            left.push_back(i);
+
+    decoded_adj.at(left[0], left[1]) = 1;
+    decoded_adj.at(left[1], left[0]) = 1;
+    decoded_weights.at(left[0], left[1]) = last_edge_weight;
+    decoded_weights.at(left[1], left[0]) = last_edge_weight;
+}
+
+bool graph::compare_trees(const matrix &adj_a, const matrix &w_a,
+                          const matrix &adj_b, const matrix &w_b) const {
+    const int size = static_cast<int>(adj_a.get_rows());
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (adj_a.at(i, j) != adj_b.at(i, j))
+                return false;
+            if (adj_a.at(i, j) != 0 && w_a.at(i, j) != w_b.at(i, j))
+                return false;
+        }
+    }
+    return true;
+}
+
+vector<int> graph::chromatic_coloring(const matrix &adj_matrix,
+                                      int &chromatic_number) const {
+    const int size = static_cast<int>(adj_matrix.get_rows());
+    vector<int> colors(size, 0);
+
+    for (int color_count = 1; color_count <= size; color_count++) {
+        std::fill(colors.begin(), colors.end(), 0);
+        if (color_backtracking(0, color_count, colors, adj_matrix)) {
+            chromatic_number = color_count;
+            return colors;
+        }
+    }
+
+    chromatic_number = size;
+    return colors;
 }

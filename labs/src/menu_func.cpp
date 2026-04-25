@@ -9,9 +9,26 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <sstream>
 
 static graph *current_graph = nullptr;
 static matrix *current_matrix = nullptr;
+static matrix *current_matrix_weights = nullptr;
+
+namespace {
+
+void clear_cached_mst() {
+    if (current_matrix != nullptr) {
+        delete current_matrix;
+        current_matrix = nullptr;
+    }
+    if (current_matrix_weights != nullptr) {
+        delete current_matrix_weights;
+        current_matrix_weights = nullptr;
+    }
+}
+
+} // namespace
 
 void menu_func::back_to_main_menu(bool &back) { back = true; }
 
@@ -22,6 +39,8 @@ void menu_func::MainMenu::test_distribution() {
 }
 
 void menu_func::StartWorkMenu::generate_graph() {
+    clear_cached_mst();
+
     size_t n;
     n = io::read_number({2, MAX_VERTICES_COUNT}, "Введите количество вершин");
 
@@ -39,6 +58,8 @@ void menu_func::StartWorkMenu::generate_graph() {
 }
 
 void menu_func::StartWorkMenu::generate_acyclic_oriented_graph() {
+    clear_cached_mst();
+
     size_t n;
     n = io::read_number({2, MAX_VERTICES_COUNT}, "Введите количество вершин");
 
@@ -69,6 +90,8 @@ void menu_func::StartWorkMenu::generate_weights_matrix() {
     current_graph->generate_weight_matrix(static_cast<WeightMode>(mode_number));
     io::print_header("Сгенерирована весовая матрица", BOLD);
     io::print_matrix(current_graph->get_weights(), "Весовая матрица", CYAN);
+
+    clear_cached_mst();
 
     io::wait_enter();
 }
@@ -126,6 +149,7 @@ void menu_func::StartWorkMenu::make_graph_tree() {
 
     io::print_header("Граф скорректирован: дерево", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
+    clear_cached_mst();
 
     io::wait_enter();
 }
@@ -144,8 +168,31 @@ void menu_func::StartWorkMenu::make_graph_oriented() {
     }
 
     current_graph->make_graph_oriented();
+    clear_cached_mst();
 
     io::print_header("Граф скорректирован: ориентированный", BOLD);
+    io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
+
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::make_graph_not_oriented() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+
+    if (!current_graph->has_status(ORIENTED)) {
+        io::print_error("Граф уже неориентированный");
+        io::wait_enter();
+        return;
+    }
+
+    current_graph->make_graph_not_oriented();
+    clear_cached_mst();
+
+    io::print_header("Граф скорректирован: неориентированный", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
 
     io::wait_enter();
@@ -493,7 +540,8 @@ void menu_func::StartWorkMenu::find_min_cost_flow() {
     int max_flow = current_graph->max_flow_ford_fulkerson(source, sink);
     int target_flow = (2 * max_flow) / 3;
     if (target_flow == 0) {
-        io::print_error("Требуемый поток получился равным 0. Увеличьте максимальный поток.");
+        io::print_error("Требуемый поток получился равным 0. Увеличьте "
+                        "максимальный поток.");
         io::wait_enter();
         return;
     }
@@ -530,5 +578,161 @@ void menu_func::StartWorkMenu::find_min_cost_flow() {
     io::print_text_with_header(result.log, "Расчет минимальной стоимости", "",
                                BOXED, CYAN);
 
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::count_spanning_trees_kirchhoff() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+    if (current_graph->has_status(ORIENTED)) {
+        io::print_error("Для теоремы Кирхгофа требуется неориентированный граф");
+        io::wait_enter();
+        return;
+    }
+
+    unsigned long long count = current_graph->count_spanning_trees_kirchhoff();
+    io::print_text_with_header("Число остовных деревьев: " + std::to_string(count),
+                               "Матричная теорема Кирхгофа", "", BOXED, GREEN);
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+
+    if (current_graph->is_weight_mode(EMPTY)) {
+        io::print_error("Сначала сгенерируйте весовую матрицу");
+        io::wait_enter();
+        return;
+    }
+    if (current_graph->has_status(ORIENTED)) {
+        io::print_error("Для алгоритма Краскала требуется неориентированный граф");
+        io::wait_enter();
+        return;
+    }
+
+    const int n = static_cast<int>(current_graph->get_size());
+    matrix mst_adj(n, n);
+    matrix mst_weights(n, n);
+    vector<weighted_edge> mst_edges;
+    int total_weight = 0;
+
+    bool ok = current_graph->build_mst_kruskal(mst_adj, mst_weights, mst_edges,
+                                               total_weight);
+    if (!ok) {
+        io::print_error("Минимальный остов построить нельзя: граф несвязный");
+        io::wait_enter();
+        return;
+    }
+
+    clear_cached_mst();
+    current_matrix = new matrix(mst_adj);
+    current_matrix_weights = new matrix(mst_weights);
+
+    int last_edge_weight = 0;
+    vector<prufer_item> code = current_graph->encode_prufer_with_weights(
+        mst_adj, mst_weights, last_edge_weight);
+
+    matrix decoded_adj(n, n);
+    matrix decoded_weights(n, n);
+    current_graph->decode_prufer_with_weights(code, last_edge_weight,
+                                              decoded_adj, decoded_weights);
+
+    bool decode_ok = current_graph->compare_trees(
+        mst_adj, mst_weights, decoded_adj, decoded_weights);
+
+    std::ostringstream edges_text;
+    edges_text << "[ ";
+    for (size_t i = 0; i < mst_edges.size(); i++) {
+        edges_text << "(" << mst_edges[i].from << ", " << mst_edges[i].to
+                   << ", w=" << mst_edges[i].weight << ")";
+        if (i + 1 != mst_edges.size())
+            edges_text << ", ";
+    }
+    edges_text << " ]";
+
+    std::ostringstream code_text;
+    code_text << "[ ";
+    for (size_t i = 0; i < code.size(); i++) {
+        code_text << "(" << code[i].vertex << ", w=" << code[i].weight << ")";
+        if (i + 1 != code.size())
+            code_text << ", ";
+    }
+    code_text << " ]";
+
+    io::print_text_with_header(
+        "Рёбра MST: " + edges_text.str() +
+            "\nСуммарный вес MST: " + std::to_string(total_weight),
+        "Краскал: минимальный остов", "", BOXED, GREEN);
+    io::print_matrix(mst_adj, "MST: матрица смежности", CYAN);
+    io::print_matrix(mst_weights, "MST: весовая матрица", CYAN);
+
+    io::print_text_with_header(
+        "Код Прюфера (вершина, вес удаляемого ребра): " + code_text.str() +
+            "\nВес последнего ребра: " + std::to_string(last_edge_weight),
+        "Кодирование Прюфера (с весами)", "", BOXED, GREEN);
+    io::print_matrix(decoded_adj, "Декодированный остов: матрица смежности",
+                     CYAN);
+    io::print_matrix(decoded_weights, "Декодированный остов: весовая матрица",
+                     CYAN);
+    io::print_text_with_header(
+        decode_ok ? "Декодирование корректно: дерево и веса совпадают."
+                  : "Ошибка декодирования: результат не совпадает с исходным MST.",
+        "Проверка декодирования", "", BOXED, decode_ok ? GREEN : RED);
+
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::min_coloring_for_graph_or_mst() {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+
+    static const vector<menu_item> COLOR_TARGET_MENU = {
+        {1, "Исходный граф", BASE},
+        {2, "Полученный остов (MST)", BASE},
+    };
+
+    io::print_command_menu(COLOR_TARGET_MENU, "Выберите граф для раскраски");
+    int mode = io::read_number(menu_min_max_id(COLOR_TARGET_MENU),
+                               "Введите номер варианта");
+
+    const matrix *target_adj = &current_graph->get_adj();
+    string target_name = "исходный граф";
+
+    if (mode == 2) {
+        if (!current_matrix) {
+            io::print_error("Сначала постройте MST (пункт Краскала)");
+            io::wait_enter();
+            return;
+        }
+        target_adj = current_matrix;
+        target_name = "полученный остов (MST)";
+    }
+
+    int chromatic_number = 0;
+    vector<int> colors =
+        current_graph->chromatic_coloring(*target_adj, chromatic_number);
+
+    std::ostringstream text;
+    text << "Хроматическое число: " << chromatic_number << "\nЦвета вершин: [ ";
+    for (size_t i = 0; i < colors.size(); i++) {
+        text << colors[i];
+        if (i + 1 != colors.size())
+            text << ", ";
+    }
+    text << " ]";
+
+    io::print_text_with_header(text.str(),
+                               "Минимальная раскраска: " + target_name, "",
+                               BOXED, GREEN);
     io::wait_enter();
 }

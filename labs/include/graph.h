@@ -21,6 +21,17 @@ struct algorithm_result {
     string log;
 };
 
+struct weighted_edge {
+    int from;
+    int to;
+    int weight;
+};
+
+struct prufer_item {
+    int vertex;
+    int weight;
+};
+
 class graph {
   private:
     size_t n;
@@ -71,6 +82,7 @@ class graph {
 
     void make_graph_acyclic_not_oriented();
     void make_graph_oriented();
+    void make_graph_not_oriented();
 
     bool has_status(GraphStatus s) const { return status & s; }
 
@@ -86,19 +98,32 @@ class graph {
     matrix run_shimbell(size_t edges, bool find_max);
 
     vector<pair<int, int>> bfs_edges(int start, unsigned long long &iterations);
-    algorithm_result bellman_ford(int start,
-                                  const matrix *edge_params,
+    algorithm_result bellman_ford(int start, const matrix *edge_params,
                                   const matrix *available_edges,
                                   bool skip_negative_cycle_check = false);
     int max_flow_ford_fulkerson(int source, int sink);
     algorithm_result min_cost_flow(int source, int sink, int target_flow);
 
     unsigned long long count_routes(size_t start, size_t end);
+    unsigned long long count_spanning_trees_kirchhoff() const;
+    bool build_mst_kruskal(matrix &mst_adj, matrix &mst_weights,
+                           vector<weighted_edge> &mst_edges,
+                           int &total_weight) const;
+    vector<prufer_item> encode_prufer_with_weights(const matrix &tree_adj,
+                                                   const matrix &tree_weights,
+                                                   int &last_edge_weight) const;
+    void decode_prufer_with_weights(const vector<prufer_item> &code,
+                                    int last_edge_weight, matrix &decoded_adj,
+                                    matrix &decoded_weights) const;
+    bool compare_trees(const matrix &adj_a, const matrix &w_a,
+                       const matrix &adj_b, const matrix &w_b) const;
+    vector<int> chromatic_coloring(const matrix &adj,
+                                   int &chromatic_number) const;
 
     int degree(size_t v) const;
-    const matrix& get_adj() const { return adj; }
-    const matrix& get_weights() const { return weights; }
+    const matrix &get_adj() const { return adj; }
+    const matrix &get_weights() const { return weights; }
     size_t get_size() const { return n; }
-    const matrix& get_throughtputs() const { return throughputs; }
-    const matrix& get_costs() const { return costs; }
+    const matrix &get_throughtputs() const { return throughputs; }
+    const matrix &get_costs() const { return costs; }
 };
