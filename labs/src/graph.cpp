@@ -4,6 +4,7 @@
 #include "io.h"
 #include <algorithm>
 #include <climits>
+#include <ctime>
 #include <queue>
 
 using std::max;
@@ -761,6 +762,7 @@ algorithm_result graph::bellman_ford(int start, const matrix *edge_params,
 
     vector<edge> edges;
     edges.reserve(n * n);
+    vector<vector<size_t>> outgoing_edges(n);
     for (size_t u = 0; u < n; u++) {
         for (size_t v = 0; v < n; v++) {
             if (available_edges->at(u, v) == 0 ||
@@ -768,48 +770,51 @@ algorithm_result graph::bellman_ford(int start, const matrix *edge_params,
                 continue;
 
             edges.push_back({u, v, static_cast<int>(edge_params->at(u, v))});
+            outgoing_edges[u].push_back(edges.size() - 1);
         }
     }
 
     result.distances[start] = 0;
+    queue<size_t> q;
+    vector<bool> in_queue(n, false);
+    vector<size_t> relax_count(n, 0);
 
-    for (size_t step = 1; step < n; step++) {
-        bool flag = false;
+    q.push(start);
+    in_queue[start] = true;
 
-        for (const edge &e : edges) {
+    while (!q.empty()) {
+        size_t from = q.front();
+        q.pop();
+        in_queue[from] = false;
+
+        if (result.distances[from] == INT_MAX)
+            continue;
+
+        for (size_t edge_idx : outgoing_edges[from]) {
+            const edge &e = edges[edge_idx];
             result.iterations++;
 
-            if (result.distances[e.from] == INT_MAX)
-                continue;
-
-            int candidate = result.distances[e.from] + e.weight;
-            // Есть ли улучшение
+            int candidate = result.distances[from] + e.weight;
             if (candidate < result.distances[e.to]) {
                 result.distances[e.to] = candidate;
-                result.parent[e.to] = static_cast<int>(e.from);
-                flag = true;
+                result.parent[e.to] = static_cast<int>(from);
+                relax_count[e.to]++;
+
+                if (!skip_negative_cycle_check && relax_count[e.to] >= n) {
+                    result.has_negative_cycle = true;
+                    return result;
+                }
+
+                if (!in_queue[e.to]) {
+                    q.push(e.to);
+                    in_queue[e.to] = true;
+                }
             }
         }
-
-        if (!flag)
-            break;
     }
 
     if (skip_negative_cycle_check)
         return result;
-
-    for (const edge &e : edges) {
-        result.iterations++;
-
-        if (result.distances[e.from] == INT_MAX)
-            continue;
-
-        int candidate = result.distances[e.from] + e.weight;
-        if (candidate < result.distances[e.to]) {
-            result.has_negative_cycle = true;
-            return result;
-        }
-    }
 
     return result;
 }
