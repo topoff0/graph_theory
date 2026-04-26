@@ -56,7 +56,7 @@ bool is_safe_color(int v, int color, const vector<int> &colors,
     return true;
 }
 
-bool color_backtracking(int v, int max_colors, vector<int> &colors,
+bool check_coloring(int v, int max_colors, vector<int> &colors,
                         const matrix &adj) {
     const int n = static_cast<int>(adj.get_rows());
     if (v == n)
@@ -66,7 +66,7 @@ bool color_backtracking(int v, int max_colors, vector<int> &colors,
         if (!is_safe_color(v, color, colors, adj))
             continue;
         colors[v] = color;
-        if (color_backtracking(v + 1, max_colors, colors, adj))
+        if (check_coloring(v + 1, max_colors, colors, adj))
             return true;
         colors[v] = 0;
     }
@@ -1019,140 +1019,106 @@ algorithm_result graph::min_cost_flow(int source, int sink, int target_flow) {
 }
 
 unsigned long long graph::count_spanning_trees_kirchhoff() const {
-    const int size = static_cast<int>(n);
+    int size = static_cast<int>(n);
     if (size <= 1)
         return 1;
 
-    vector<vector<long double>> laplacian(
-        size, vector<long double>(size, static_cast<long double>(0)));
+    vector<vector<long double>> m_kirchhoff(size, vector<long double>(size, 0));
 
     for (int i = 0; i < size; i++) {
-        int degree_value = 0;
+        int degree = 0;
         for (int j = 0; j < size; j++) {
             if (adj.at(i, j) != 0) {
-                degree_value++;
                 if (i != j)
-                    laplacian[i][j] = -1;
+                    m_kirchhoff[i][j] = -1;
+                degree++;
             }
         }
-        laplacian[i][i] = degree_value;
+        m_kirchhoff[i][i] = degree;
     }
 
-    const int minor_size = size - 1;
-    vector<vector<long double>> minor(minor_size,
-                                      vector<long double>(minor_size, 0));
+    int m = size - 1;
+    vector<vector<long double>> a(m, vector<long double>(m));
 
-    for (int i = 0; i < minor_size; i++)
-        for (int j = 0; j < minor_size; j++)
-            minor[i][j] = laplacian[i][j];
+    for (int i = 0; i < m; i++)
+        for (int j = 0; j < m; j++)
+            a[i][j] = m_kirchhoff[i][j];
 
-    long double det = 1.0L;
-    int sign = 1;
-    const long double eps = 1e-12L;
+    long double det = 1.0;
 
-    for (int col = 0; col < minor_size; col++) {
-        int pivot = col;
-        for (int row = col + 1; row < minor_size; row++) {
-            if (fabsl(minor[row][col]) > fabsl(minor[pivot][col]))
-                pivot = row;
-        }
+    for (int i = 0; i < m; i++) {
+        det *= a[i][i];
 
-        if (fabsl(minor[pivot][col]) < eps)
-            return 0;
-
-        if (pivot != col) {
-            std::swap(minor[pivot], minor[col]);
-            sign *= -1;
-        }
-
-        long double pivot_value = minor[col][col];
-        det *= pivot_value;
-
-        for (int row = col + 1; row < minor_size; row++) {
-            long double factor = minor[row][col] / pivot_value;
-            for (int k = col; k < minor_size; k++)
-                minor[row][k] -= factor * minor[col][k];
+        for (int j = i + 1; j < m; j++) {
+            long double f = a[j][i] / a[i][i];
+            for (int k = i; k < m; k++)
+                a[j][k] -= f * a[i][k];
         }
     }
 
-    det *= sign;
-    if (det < 0)
-        det = -det;
+    return static_cast<unsigned long long>(llround(fabsl(det)));
+}
 
-    return static_cast<unsigned long long>(llround(det));
+int find_set(int v, vector<int> &p) {
+    if (p[v] == v)
+        return v;
+    return p[v] = find_set(p[v], p);
+}
+
+bool cmp_edge(const weighted_edge &a, const weighted_edge &b) {
+    return a.weight < b.weight;
 }
 
 bool graph::build_mst_kruskal(matrix &mst_adj, matrix &mst_weights,
                               vector<weighted_edge> &mst_edges,
                               int &total_weight) const {
-    const int size = static_cast<int>(n);
-    vector<weighted_edge> edges;
+    int n = static_cast<int>(this->n);
 
-    for (int i = 0; i < size; i++) {
-        for (int j = i + 1; j < size; j++) {
-            if (adj.at(i, j) == 0 || weights.at(i, j) == INT_MAX)
-                continue;
-            edges.push_back({i, j, static_cast<int>(weights.at(i, j))});
+    vector<weighted_edge> E;
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (adj.at(i, j) != 0 && weights.at(i, j) != INT_MAX) {
+                E.push_back({i, j, (int)weights.at(i, j)});
+            }
         }
     }
 
-    std::sort(edges.begin(), edges.end(),
-              [](const weighted_edge &a, const weighted_edge &b) {
-                  if (a.weight != b.weight)
-                      return a.weight < b.weight;
-                  if (a.from != b.from)
-                      return a.from < b.from;
-                  return a.to < b.to;
-              });
+    sort(E.begin(), E.end(), cmp_edge);
 
-    vector<int> parent(size), rank(size, 0);
-    std::iota(parent.begin(), parent.end(), 0);
-
-    std::function<int(int)> dsu_find = [&](int v) {
-        if (parent[v] == v)
-            return v;
-        parent[v] = dsu_find(parent[v]);
-        return parent[v];
-    };
-
-    auto dsu_union = [&](int a, int b) {
-        a = dsu_find(a);
-        b = dsu_find(b);
-        if (a == b)
-            return false;
-        if (rank[a] < rank[b])
-            std::swap(a, b);
-        parent[b] = a;
-        if (rank[a] == rank[b])
-            rank[a]++;
-        return true;
-    };
+    vector<int> p(n);
+    for (int i = 0; i < n; i++)
+        p[i] = i;
 
     mst_adj.clear();
     mst_weights.fill(INT_MAX);
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < n; i++)
         mst_weights.at(i, i) = 0;
 
-    total_weight = 0;
     mst_edges.clear();
+    total_weight = 0;
 
-    for (const weighted_edge &edge : edges) {
-        if (!dsu_union(edge.from, edge.to))
-            continue;
+    int k = 0;
 
-        mst_adj.at(edge.from, edge.to) = 1;
-        mst_adj.at(edge.to, edge.from) = 1;
-        mst_weights.at(edge.from, edge.to) = edge.weight;
-        mst_weights.at(edge.to, edge.from) = edge.weight;
+    while ((int)mst_edges.size() < n - 1 && k < (int)E.size()) {
+        int u = E[k].from;
+        int v = E[k].to;
 
-        total_weight += edge.weight;
-        mst_edges.push_back(edge);
+        if (find_set(u, p) != find_set(v, p)) {
+            p[find_set(v, p)] = find_set(u, p);
 
-        if (static_cast<int>(mst_edges.size()) == size - 1)
-            break;
+            mst_edges.push_back(E[k]);
+            total_weight += E[k].weight;
+
+            mst_adj.at(u, v) = 1;
+            mst_adj.at(v, u) = 1;
+            mst_weights.at(u, v) = E[k].weight;
+            mst_weights.at(v, u) = E[k].weight;
+        }
+
+        k++;
     }
 
-    return static_cast<int>(mst_edges.size()) == size - 1;
+    return (int)mst_edges.size() == n - 1;
 }
 
 vector<prufer_item>
@@ -1280,7 +1246,7 @@ vector<int> graph::chromatic_coloring(const matrix &adj_matrix,
 
     for (int color_count = 1; color_count <= size; color_count++) {
         std::fill(colors.begin(), colors.end(), 0);
-        if (color_backtracking(0, color_count, colors, adj_matrix)) {
+        if (check_coloring(0, color_count, colors, adj_matrix)) {
             chromatic_number = color_count;
             return colors;
         }

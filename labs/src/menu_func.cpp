@@ -17,7 +17,7 @@ static matrix *current_matrix_weights = nullptr;
 
 namespace {
 
-void clear_cached_mst() {
+void clear_cached_min_ost() {
     if (current_matrix != nullptr) {
         delete current_matrix;
         current_matrix = nullptr;
@@ -39,7 +39,7 @@ void menu_func::MainMenu::test_distribution() {
 }
 
 void menu_func::StartWorkMenu::generate_graph() {
-    clear_cached_mst();
+    clear_cached_min_ost();
 
     size_t n;
     n = io::read_number({2, MAX_VERTICES_COUNT}, "Введите количество вершин");
@@ -58,7 +58,7 @@ void menu_func::StartWorkMenu::generate_graph() {
 }
 
 void menu_func::StartWorkMenu::generate_acyclic_oriented_graph() {
-    clear_cached_mst();
+    clear_cached_min_ost();
 
     size_t n;
     n = io::read_number({2, MAX_VERTICES_COUNT}, "Введите количество вершин");
@@ -91,7 +91,7 @@ void menu_func::StartWorkMenu::generate_weights_matrix() {
     io::print_header("Сгенерирована весовая матрица", BOLD);
     io::print_matrix(current_graph->get_weights(), "Весовая матрица", CYAN);
 
-    clear_cached_mst();
+    clear_cached_min_ost();
 
     io::wait_enter();
 }
@@ -149,7 +149,7 @@ void menu_func::StartWorkMenu::make_graph_tree() {
 
     io::print_header("Граф скорректирован: дерево", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
-    clear_cached_mst();
+    clear_cached_min_ost();
 
     io::wait_enter();
 }
@@ -168,7 +168,7 @@ void menu_func::StartWorkMenu::make_graph_oriented() {
     }
 
     current_graph->make_graph_oriented();
-    clear_cached_mst();
+    clear_cached_min_ost();
 
     io::print_header("Граф скорректирован: ориентированный", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
@@ -190,7 +190,7 @@ void menu_func::StartWorkMenu::make_graph_not_oriented() {
     }
 
     current_graph->make_graph_not_oriented();
-    clear_cached_mst();
+    clear_cached_min_ost();
 
     io::print_header("Граф скорректирован: неориентированный", BOLD);
     io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
@@ -618,12 +618,12 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
     }
 
     const int n = static_cast<int>(current_graph->get_size());
-    matrix mst_adj(n, n);
-    matrix mst_weights(n, n);
-    vector<weighted_edge> mst_edges;
+    matrix min_ost_adj(n, n);
+    matrix min_ost_weights(n, n);
+    vector<weighted_edge> min_ost_edges;
     int total_weight = 0;
 
-    bool ok = current_graph->build_mst_kruskal(mst_adj, mst_weights, mst_edges,
+    bool ok = current_graph->build_mst_kruskal(min_ost_adj, min_ost_weights, min_ost_edges,
                                                total_weight);
     if (!ok) {
         io::print_error("Минимальный остов построить нельзя: граф несвязный");
@@ -631,13 +631,13 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
         return;
     }
 
-    clear_cached_mst();
-    current_matrix = new matrix(mst_adj);
-    current_matrix_weights = new matrix(mst_weights);
+    clear_cached_min_ost();
+    current_matrix = new matrix(min_ost_adj);
+    current_matrix_weights = new matrix(min_ost_weights);
 
     int last_edge_weight = 0;
     vector<prufer_item> code = current_graph->encode_prufer_with_weights(
-        mst_adj, mst_weights, last_edge_weight);
+        min_ost_adj, min_ost_weights, last_edge_weight);
 
     matrix decoded_adj(n, n);
     matrix decoded_weights(n, n);
@@ -645,14 +645,14 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
                                               decoded_adj, decoded_weights);
 
     bool decode_ok = current_graph->compare_trees(
-        mst_adj, mst_weights, decoded_adj, decoded_weights);
+        min_ost_adj, min_ost_weights, decoded_adj, decoded_weights);
 
     std::ostringstream edges_text;
     edges_text << "[ ";
-    for (size_t i = 0; i < mst_edges.size(); i++) {
-        edges_text << "(" << mst_edges[i].from << ", " << mst_edges[i].to
-                   << ", w=" << mst_edges[i].weight << ")";
-        if (i + 1 != mst_edges.size())
+    for (size_t i = 0; i < min_ost_edges.size(); i++) {
+        edges_text << "(" << min_ost_edges[i].from << ", " << min_ost_edges[i].to
+                   << ", w=" << min_ost_edges[i].weight << ")";
+        if (i + 1 != min_ost_edges.size())
             edges_text << ", ";
     }
     edges_text << " ]";
@@ -667,23 +667,23 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
     code_text << " ]";
 
     io::print_text_with_header(
-        "Рёбра MST: " + edges_text.str() +
-            "\nСуммарный вес MST: " + std::to_string(total_weight),
+        "Рёбра остова: " + edges_text.str() +
+            "\nСуммарный вес остова: " + std::to_string(total_weight),
         "Краскал: минимальный остов", "", BOXED, GREEN);
-    io::print_matrix(mst_adj, "MST: матрица смежности", CYAN);
-    io::print_matrix(mst_weights, "MST: весовая матрица", CYAN);
+    io::print_matrix(min_ost_adj, "Минимальный остов: матрица смежности", CYAN);
+    io::print_matrix(min_ost_weights, "Минимальный остов: весовая матрица", CYAN);
 
     io::print_text_with_header(
         "Код Прюфера (вершина, вес удаляемого ребра): " + code_text.str() +
             "\nВес последнего ребра: " + std::to_string(last_edge_weight),
-        "Кодирование Прюфера (с весами)", "", BOXED, GREEN);
+        "Кодирование Прюфера", "", BOXED, GREEN);
     io::print_matrix(decoded_adj, "Декодированный остов: матрица смежности",
                      CYAN);
     io::print_matrix(decoded_weights, "Декодированный остов: весовая матрица",
                      CYAN);
     io::print_text_with_header(
-        decode_ok ? "Декодирование корректно: дерево и веса совпадают."
-                  : "Ошибка декодирования: результат не совпадает с исходным MST.",
+        decode_ok ? "Декодирование корректно: остов и веса совпадают."
+                  : "Ошибка декодирования: результат не совпадает с исходным остовом.",
         "Проверка декодирования", "", BOXED, decode_ok ? GREEN : RED);
 
     io::wait_enter();
@@ -710,12 +710,12 @@ void menu_func::StartWorkMenu::min_coloring_for_graph_or_mst() {
 
     if (mode == 2) {
         if (!current_matrix) {
-            io::print_error("Сначала постройте MST (пункт Краскала)");
+            io::print_error("Сначала постройте минимальный остов (пункт Краскала)");
             io::wait_enter();
             return;
         }
         target_adj = current_matrix;
-        target_name = "полученный остов (MST)";
+        target_name = "полученный остов";
     }
 
     int chromatic_number = 0;
