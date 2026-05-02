@@ -6,10 +6,11 @@
 #include "io.h"
 #include "matrix.h"
 #include "menu_item.h"
+#include <algorithm>
 #include <cstdlib>
 #include <ctime>
-#include <string>
 #include <sstream>
+#include <string>
 
 static graph *current_graph = nullptr;
 static matrix *current_matrix = nullptr;
@@ -28,6 +29,147 @@ void clear_cached_min_ost() {
     }
 }
 
+string edge_list_to_string(const vector<weighted_edge> &edges,
+                           bool show_weight = true) {
+    if (edges.empty())
+        return "{ }";
+
+    std::ostringstream text;
+    text << "{ ";
+    for (size_t i = 0; i < edges.size(); i++) {
+        text << "(" << edges[i].from << ", " << edges[i].to;
+        if (show_weight)
+            text << ", w=" << edges[i].weight;
+        text << ")";
+
+        if (i + 1 != edges.size())
+            text << ", ";
+    }
+    text << " }";
+    return text.str();
+}
+
+string pair_list_to_string(const vector<pair<int, int>> &edges) {
+    if (edges.empty())
+        return "{ }";
+
+    std::ostringstream text;
+    text << "{ ";
+    for (size_t i = 0; i < edges.size(); i++) {
+        text << "(" << edges[i].first << ", " << edges[i].second << ")";
+        if (i + 1 != edges.size())
+            text << ", ";
+    }
+    text << " }";
+    return text.str();
+}
+
+string vertex_route_to_string(const vector<int> &route) {
+    if (route.empty())
+        return "[ ]";
+
+    std::ostringstream text;
+    text << "[ ";
+    for (size_t i = 0; i < route.size(); i++) {
+        text << route[i];
+        if (i + 1 != route.size())
+            text << " -> ";
+    }
+    text << " ]";
+    return text.str();
+}
+
+vector<int> parse_cycle_indices(string input, int max_index) {
+    for (char &ch : input) {
+        if (ch == ',' || ch == ';')
+            ch = ' ';
+    }
+
+    std::istringstream stream(input);
+    vector<int> indices;
+    vector<bool> used(max_index, false);
+    int value = 0;
+
+    while (stream >> value) {
+        if (value < 1 || value > max_index)
+            continue;
+        if (used[value - 1])
+            continue;
+        used[value - 1] = true;
+        indices.push_back(value - 1);
+    }
+
+    return indices;
+}
+
+bool current_graph_is_undirected(const string &algorithm_name) {
+    if (!current_graph) {
+        io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return false;
+    }
+    if (current_graph->has_status(ORIENTED)) {
+        io::print_error("Для алгоритма \"" + algorithm_name +
+                        "\" требуется неориентированный граф");
+        io::wait_enter();
+        return false;
+    }
+    return true;
+}
+
+bool build_min_tree(matrix &tree_adj, matrix &tree_weights,
+                    vector<weighted_edge> &tree_edges, int &total_weight) {
+    bool ok = current_graph->build_mst_kruskal(tree_adj, tree_weights,
+                                               tree_edges, total_weight);
+    if (!ok) {
+        io::print_error("Минимальный остов построить нельзя: граф несвязный");
+        io::wait_enter();
+        return false;
+    }
+
+    clear_cached_min_ost();
+    current_matrix = new matrix(tree_adj);
+    current_matrix_weights = new matrix(tree_weights);
+    return true;
+}
+
+void print_euler_theorem() {
+    string text =
+        "Эйлеровых графов почти нет.\n"
+        "G(p) - множество всех графов с p вершинами.\n"
+        "E(p) - множество эйлеровых графов с p вершинами.\n"
+        "При росте p отношение |E(p)| / |G(p)| стремится к 0.";
+
+    io::print_text_with_header(text, "Теорема о количестве эйлеровых графов",
+                               "", BOXED, GREEN);
+}
+
+string run_euler_theorem_check() {
+    std::ostringstream text;
+
+    for (int vertices = EULER_THEOREM_MIN_VERTICES;
+         vertices <= EULER_THEOREM_MAX_VERTICES; vertices++) {
+        int euler_count = 0;
+
+        for (int i = 0; i < EULER_THEOREM_TESTS_COUNT; i++) {
+            graph g(vertices);
+            g.generate_DAG(false);
+            g.make_graph_not_oriented();
+
+            if (g.is_eulerian())
+                euler_count++;
+        }
+
+        text << "Вершин: " << vertices << ". Эйлеровых: " << euler_count
+             << " из " << EULER_THEOREM_TESTS_COUNT << ".";
+
+        if (vertices != EULER_THEOREM_MAX_VERTICES)
+            text << "\n";
+    }
+
+    return text.str();
+}
+
 } // namespace
 
 void menu_func::back_to_main_menu(bool &back) { back = true; }
@@ -36,25 +178,6 @@ void menu_func::MainMenu::test_distribution() {
     distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
     vector<double> values = dist.sample(1000);
     dist.print_histogram(values, 20, COLOR::GREEN, 60);
-}
-
-void menu_func::StartWorkMenu::generate_graph() {
-    clear_cached_min_ost();
-
-    size_t n;
-    n = io::read_number({2, MAX_VERTICES_COUNT}, "Введите количество вершин");
-
-    if (current_graph != nullptr)
-        delete current_graph;
-
-    current_graph = new graph(n);
-
-    current_graph->generate_connected_graph();
-
-    io::print_header("Сгенерирован граф", BOLD);
-    io::print_matrix(current_graph->get_adj(), "Матрица смежности", CYAN);
-
-    io::wait_enter();
 }
 
 void menu_func::StartWorkMenu::generate_acyclic_oriented_graph() {
@@ -588,13 +711,15 @@ void menu_func::StartWorkMenu::count_spanning_trees_kirchhoff() {
         return;
     }
     if (current_graph->has_status(ORIENTED)) {
-        io::print_error("Для теоремы Кирхгофа требуется неориентированный граф");
+        io::print_error(
+            "Для теоремы Кирхгофа требуется неориентированный граф");
         io::wait_enter();
         return;
     }
 
     unsigned long long count = current_graph->count_spanning_trees_kirchhoff();
-    io::print_text_with_header("Число остовных деревьев: " + std::to_string(count),
+    io::print_text_with_header("Число остовных деревьев: " +
+                                   std::to_string(count),
                                "Матричная теорема Кирхгофа", "", BOXED, GREEN);
     io::wait_enter();
 }
@@ -612,7 +737,8 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
         return;
     }
     if (current_graph->has_status(ORIENTED)) {
-        io::print_error("Для алгоритма Краскала требуется неориентированный граф");
+        io::print_error(
+            "Для алгоритма Краскала требуется неориентированный граф");
         io::wait_enter();
         return;
     }
@@ -623,8 +749,8 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
     vector<weighted_edge> min_ost_edges;
     int total_weight = 0;
 
-    bool ok = current_graph->build_mst_kruskal(min_ost_adj, min_ost_weights, min_ost_edges,
-                                               total_weight);
+    bool ok = current_graph->build_mst_kruskal(min_ost_adj, min_ost_weights,
+                                               min_ost_edges, total_weight);
     if (!ok) {
         io::print_error("Минимальный остов построить нельзя: граф несвязный");
         io::wait_enter();
@@ -644,14 +770,15 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
     current_graph->decode_prufer_with_weights(code, last_edge_weight,
                                               decoded_adj, decoded_weights);
 
-    bool decode_ok = current_graph->compare_trees(
-        min_ost_adj, min_ost_weights, decoded_adj, decoded_weights);
+    bool decode_ok = current_graph->compare_trees(min_ost_adj, min_ost_weights,
+                                                  decoded_adj, decoded_weights);
 
     std::ostringstream edges_text;
     edges_text << "[ ";
     for (size_t i = 0; i < min_ost_edges.size(); i++) {
-        edges_text << "(" << min_ost_edges[i].from << ", " << min_ost_edges[i].to
-                   << ", w=" << min_ost_edges[i].weight << ")";
+        edges_text << "(" << min_ost_edges[i].from << ", "
+                   << min_ost_edges[i].to << ", w=" << min_ost_edges[i].weight
+                   << ")";
         if (i + 1 != min_ost_edges.size())
             edges_text << ", ";
     }
@@ -671,7 +798,8 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
             "\nСуммарный вес остова: " + std::to_string(total_weight),
         "Краскал: минимальный остов", "", BOXED, GREEN);
     io::print_matrix(min_ost_adj, "Минимальный остов: матрица смежности", CYAN);
-    io::print_matrix(min_ost_weights, "Минимальный остов: весовая матрица", CYAN);
+    io::print_matrix(min_ost_weights, "Минимальный остов: весовая матрица",
+                     CYAN);
 
     io::print_text_with_header(
         "Код Прюфера (вершина, вес удаляемого ребра): " + code_text.str() +
@@ -683,7 +811,8 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
                      CYAN);
     io::print_text_with_header(
         decode_ok ? "Декодирование корректно: остов и веса совпадают."
-                  : "Ошибка декодирования: результат не совпадает с исходным остовом.",
+                  : "Ошибка декодирования: результат не совпадает с исходным "
+                    "остовом.",
         "Проверка декодирования", "", BOXED, decode_ok ? GREEN : RED);
 
     io::wait_enter();
@@ -692,6 +821,12 @@ void menu_func::StartWorkMenu::build_mst_kruskal_and_prufer() {
 void menu_func::StartWorkMenu::min_coloring_for_graph_or_mst() {
     if (!current_graph) {
         io::print_error("Сначала сгенерируйте граф");
+        io::wait_enter();
+        return;
+    }
+    if (current_graph->has_status(ORIENTED)) {
+        io::print_error(
+            "Для алгоритма минимальной раскраски требуется неориентированный граф");
         io::wait_enter();
         return;
     }
@@ -710,7 +845,8 @@ void menu_func::StartWorkMenu::min_coloring_for_graph_or_mst() {
 
     if (mode == 2) {
         if (!current_matrix) {
-            io::print_error("Сначала постройте минимальный остов (пункт Краскала)");
+            io::print_error(
+                "Сначала постройте минимальный остов (пункт Краскала)");
             io::wait_enter();
             return;
         }
@@ -722,6 +858,11 @@ void menu_func::StartWorkMenu::min_coloring_for_graph_or_mst() {
     vector<int> colors =
         current_graph->chromatic_coloring(*target_adj, chromatic_number);
 
+#if DEBUG
+    io::print_matrix(current_graph->get_adj(),
+                     "DEBUG: Матрица смежности для проверки", YELLOW);
+#endif
+
     std::ostringstream text;
     text << "Хроматическое число: " << chromatic_number << "\nЦвета вершин: [ ";
     for (size_t i = 0; i < colors.size(); i++) {
@@ -731,8 +872,127 @@ void menu_func::StartWorkMenu::min_coloring_for_graph_or_mst() {
     }
     text << " ]";
 
-    io::print_text_with_header(text.str(),
-                               "Минимальная раскраска: " + target_name, "",
+    io::print_text_with_header(
+        text.str(), "Минимальная раскраска: " + target_name, "", BOXED, GREEN);
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::build_eulerian_cycle() {
+    if (!current_graph_is_undirected("эйлеров цикл"))
+        return;
+
+    euler_result result = current_graph->build_eulerian_cycle();
+    if (!result.connected) {
+        io::print_error(result.log);
+        io::wait_enter();
+        return;
+    }
+
+    if (!result.duplicated_edges.empty())
+        clear_cached_min_ost();
+
+    std::ostringstream text;
+    text << (result.was_eulerian ? "Граф был эйлеровым"
+                                 : "Граф не был эйлеровым")
+         << "\n" << result.log
+         << "\nПродублированные ребра: "
+         << pair_list_to_string(result.duplicated_edges)
+         << "\nЭйлеров цикл: " << vertex_route_to_string(result.cycle);
+
+    io::print_text_with_header(text.str(), "Лабораторная 5: эйлеров цикл", "",
+                               BOXED, GREEN);
+    io::print_matrix(current_graph->get_adj(),
+                     "Матрица смежности после проверки/модификации", CYAN);
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::fundamental_cycles_and_symmetric_difference() {
+    if (!current_graph_is_undirected("фундаментальные циклы"))
+        return;
+    if (current_graph->is_weight_mode(EMPTY)) {
+        io::print_error("Сначала сгенерируйте весовую матрицу");
+        io::wait_enter();
+        return;
+    }
+
+    const int n = static_cast<int>(current_graph->get_size());
+    matrix min_ost_adj(n, n);
+    matrix min_ost_weights(n, n);
+    vector<weighted_edge> min_ost_edges;
+    int total_weight = 0;
+
+    if (!build_min_tree(min_ost_adj, min_ost_weights, min_ost_edges,
+                        total_weight))
+        return;
+
+    vector<fundamental_cycle> cycles =
+        current_graph->build_fundamental_cycles(min_ost_adj, min_ost_weights);
+
+    std::ostringstream mst_text;
+    mst_text << "Ребра остова: " << edge_list_to_string(min_ost_edges)
+             << "\nСуммарный вес остова: " << total_weight;
+
+    io::print_text_with_header(mst_text.str(),
+                               "Кратчайший остов для системы циклов", "",
+                               BOXED, GREEN);
+    io::print_matrix(min_ost_adj, "Минимальный остов: матрица смежности", CYAN);
+
+    if (cycles.empty()) {
+        io::print_text_with_header(
+            "Хорд нет: исходный граф является деревом, фундаментальная система "
+            "циклов пуста",
+            "Фундаментальная система циклов", "", BOXED, YELLOW);
+        io::wait_enter();
+        return;
+    }
+
+    std::ostringstream cycles_text;
+    for (size_t i = 0; i < cycles.size(); i++) {
+        cycles_text << "Z" << (i + 1) << " (хорда "
+                    << cycles[i].chord_from << "-" << cycles[i].chord_to
+                    << "): " << edge_list_to_string(cycles[i].edges);
+        if (i + 1 != cycles.size())
+            cycles_text << "\n";
+    }
+
+    io::print_text_with_header(cycles_text.str(),
+                               "Фундаментальная система циклов", "", BOXED,
+                               GREEN);
+
+    string input = io::read_string(
+        "Введите номера циклов для симметрической разности через пробел");
+    vector<int> selected = parse_cycle_indices(input, cycles.size());
+
+    if (selected.empty()) {
+        io::print_error("Не выбрано ни одного корректного номера цикла");
+        io::wait_enter();
+        return;
+    }
+
+    vector<weighted_edge> sym_diff =
+        current_graph->symmetric_difference_cycles(cycles, selected);
+
+    std::ostringstream selected_text;
+    selected_text << "Выбранные циклы: [ ";
+    for (size_t i = 0; i < selected.size(); i++) {
+        selected_text << "Z" << (selected[i] + 1);
+        if (i + 1 != selected.size())
+            selected_text << ", ";
+    }
+    selected_text << " ]\nСимметрическая разность: "
+                  << edge_list_to_string(sym_diff);
+
+    io::print_text_with_header(selected_text.str(),
+                               "Цикл через симметрическую разность", "",
+                               BOXED, GREEN);
+    io::wait_enter();
+}
+
+void menu_func::StartWorkMenu::check_eulerian_graphs_theorem() {
+    print_euler_theorem();
+
+    string result = run_euler_theorem_check();
+    io::print_text_with_header(result, "Проверка на сгенерированных графах", "",
                                BOXED, GREEN);
     io::wait_enter();
 }

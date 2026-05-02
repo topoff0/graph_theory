@@ -32,6 +32,20 @@ struct prufer_item {
     int weight;
 };
 
+struct euler_result {
+    bool connected = false;
+    bool was_eulerian = false;
+    vector<pair<int, int>> duplicated_edges;
+    vector<int> cycle;
+    string log;
+};
+
+struct fundamental_cycle {
+    int chord_from;
+    int chord_to;
+    vector<weighted_edge> edges;
+};
+
 class graph {
   private:
     size_t n;
@@ -71,7 +85,7 @@ class graph {
     graph(size_t vertices);
 
     void generate_connected_graph();
-    void generate_DAG();
+    void generate_DAG(bool show_debug = true);
     void generate_weight_matrix(WeightMode mode);
     void generate_throughputs_matrix();
     void generate_costs_matrix();
@@ -119,6 +133,14 @@ class graph {
                        const matrix &adj_b, const matrix &w_b) const;
     vector<int> chromatic_coloring(const matrix &adj,
                                    int &chromatic_number) const;
+    bool is_eulerian() const;
+    euler_result build_eulerian_cycle();
+    vector<fundamental_cycle>
+    build_fundamental_cycles(const matrix &tree_adj,
+                             const matrix &tree_weights) const;
+    vector<weighted_edge>
+    symmetric_difference_cycles(const vector<fundamental_cycle> &cycles,
+                                const vector<int> &selected_indices) const;
 
     int degree(size_t v) const;
     const matrix &get_adj() const { return adj; }

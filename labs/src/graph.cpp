@@ -4,12 +4,15 @@
 #include "io.h"
 #include <algorithm>
 #include <climits>
+#include <map>
 #include <queue>
+#include <stack>
 
 using std::max;
 using std::min;
 using std::pair;
 using std::queue;
+using std::stack;
 
 namespace {
 
@@ -57,7 +60,7 @@ bool is_safe_color(int v, int color, const vector<int> &colors,
 }
 
 bool check_coloring(int v, int max_colors, vector<int> &colors,
-                        const matrix &adj) {
+                    const matrix &adj) {
     const int n = static_cast<int>(adj.get_rows());
     if (v == n)
         return true;
@@ -72,6 +75,158 @@ bool check_coloring(int v, int max_colors, vector<int> &colors,
     }
 
     return false;
+}
+
+int matrix_edge_weight(const matrix &weights, int u, int v) {
+    if (weights.at(u, v) == INT_MAX)
+        return 0;
+    return static_cast<int>(weights.at(u, v));
+}
+
+pair<int, int> normalized_edge(int u, int v) {
+    if (u > v)
+        std::swap(u, v);
+    return {u, v};
+}
+
+int first_vertex_with_edges(const matrix &adj) {
+    const int size = static_cast<int>(adj.get_rows());
+    for (int v = 0; v < size; v++)
+        for (int u = 0; u < size; u++)
+            if (adj.at(v, u) != 0)
+                return v;
+    return -1;
+}
+
+int vertex_degree(const matrix &adj, int v) {
+    const int size = static_cast<int>(adj.get_rows());
+    int deg = 0;
+    for (int u = 0; u < size; u++)
+        deg += static_cast<int>(adj.at(v, u));
+    return deg;
+}
+
+vector<int> odd_vertices(const matrix &adj) {
+    const int size = static_cast<int>(adj.get_rows());
+    vector<int> odd;
+    for (int v = 0; v < size; v++)
+        if (vertex_degree(adj, v) % 2 != 0)
+            odd.push_back(v);
+    return odd;
+}
+
+bool is_connected_graph(const matrix &adj) {
+    const int size = static_cast<int>(adj.get_rows());
+    int start = first_vertex_with_edges(adj);
+
+    if (start == -1)
+        return true;
+
+    vector<bool> used(size, false);
+    queue<int> q;
+    used[start] = true;
+    q.push(start);
+
+    while (!q.empty()) {
+        int v = q.front();
+        q.pop();
+
+        for (int u = 0; u < size; u++) {
+            if (used[u] || adj.at(v, u) == 0)
+                continue;
+            used[u] = true;
+            q.push(u);
+        }
+    }
+
+    for (int v = 0; v < size; v++)
+        if (vertex_degree(adj, v) > 0 && !used[v])
+            return false;
+
+    return true;
+}
+
+vector<int> path_between_vertices(const matrix &adj, int from, int to) {
+    const int size = static_cast<int>(adj.get_rows());
+    vector<int> parent(size, -1);
+    queue<int> q;
+
+    parent[from] = from;
+    q.push(from);
+
+    while (!q.empty() && parent[to] == -1) {
+        int v = q.front();
+        q.pop();
+
+        for (int u = 0; u < size; u++) {
+            if (parent[u] != -1 || adj.at(v, u) == 0)
+                continue;
+            parent[u] = v;
+            q.push(u);
+        }
+    }
+
+    if (parent[to] == -1)
+        return {};
+
+    vector<int> path;
+    for (int v = to; v != from; v = parent[v])
+        path.push_back(v);
+    path.push_back(from);
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+void duplicate_path(matrix &adj, const vector<int> &path,
+                    vector<pair<int, int>> &duplicated_edges) {
+    for (size_t i = 1; i < path.size(); i++) {
+        int u = path[i - 1];
+        int v = path[i];
+        adj.at(u, v) += 1;
+        adj.at(v, u) += 1;
+        duplicated_edges.push_back(normalized_edge(u, v));
+    }
+}
+
+void make_degrees_even(matrix &adj, vector<pair<int, int>> &duplicated_edges) {
+    vector<int> odd = odd_vertices(adj);
+
+    for (size_t i = 0; i + 1 < odd.size(); i += 2) {
+        vector<int> path = path_between_vertices(adj, odd[i], odd[i + 1]);
+        duplicate_path(adj, path, duplicated_edges);
+    }
+}
+
+vector<int> euler_cycle_by_stack(const matrix &start_adj, int start) {
+    matrix adj = start_adj;
+    stack<int> s;
+    vector<int> cycle;
+
+    s.push(start);
+
+    while (!s.empty()) {
+        int v = s.top();
+        int u = -1;
+
+        for (int i = 0; i < static_cast<int>(adj.get_rows()); i++) {
+            if (adj.at(v, i) != 0) {
+                u = i;
+                break;
+            }
+        }
+
+        if (u == -1) {
+            cycle.push_back(v);
+            s.pop();
+        } else {
+            s.push(u);
+            adj.at(v, u) -= 1;
+            adj.at(u, v) -= 1;
+        }
+    }
+
+    std::reverse(cycle.begin(), cycle.end());
+    return cycle;
 }
 
 } // namespace
@@ -161,7 +316,7 @@ void graph::generate_connected_graph_from_degrees(const vector<int> &degrees) {
 
 void graph::generate_DAG_from_degrees(const vector<int> &degrees) {
     adj.clear();
-    std::mt19937 rng(static_cast<unsigned>(time(0)));
+    static std::mt19937 rng(std::random_device{}());
     vector<int> used(n, 0);
 
     for (int i = 0; i < n - 1; i++) {
@@ -229,11 +384,11 @@ void graph::generate_connected_graph() {
     }
 }
 
-void graph::generate_DAG() {
+void graph::generate_DAG(bool show_debug) {
     invalidate_flow_matrices();
     clear_all_statuses();
 
-    distribution dist(MU, ALPHA, static_cast<unsigned int>(time(0)));
+    distribution dist(MU, ALPHA);
     vector<double> deg_values = dist.sample(n);
 
     vector<int> degrees(n, 0);
@@ -241,16 +396,18 @@ void graph::generate_DAG() {
         degrees[i] = static_cast<int>(std::round(deg_values[i]));
     }
 #if DEBUG
-    string before = "[ ";
-    for (int i = 0; i < degrees.size(); i++) {
-        before.append(std::to_string(degrees[i]));
-        if (i != degrees.size() - 1)
-            before.append(", ");
-    }
-    before.append(" ]");
+    if (show_debug) {
+        string before = "[ ";
+        for (int i = 0; i < degrees.size(); i++) {
+            before.append(std::to_string(degrees[i]));
+            if (i != degrees.size() - 1)
+                before.append(", ");
+        }
+        before.append(" ]");
 
-    io::print_text_with_header(before, "DEBUG: Степени до корректировки (DAG)",
-                               "", BOXED, YELLOW);
+        io::print_text_with_header(
+            before, "DEBUG: Степени до корректировки (DAG)", "", BOXED, YELLOW);
+    }
 #endif
 
     vector<int> correct_degrees = degrees;
@@ -261,16 +418,19 @@ void graph::generate_DAG() {
         correct_degrees[i] = std::min(correct_degrees[i], (int)(sz - i - 1));
     }
 #if DEBUG
-    string after = "[ ";
-    for (int i = 0; i < correct_degrees.size(); i++) {
-        after.append(std::to_string(correct_degrees[i]));
-        if (i != correct_degrees.size() - 1)
-            after.append(", ");
-    }
-    after.append(" ]");
+    if (show_debug) {
+        string after = "[ ";
+        for (int i = 0; i < correct_degrees.size(); i++) {
+            after.append(std::to_string(correct_degrees[i]));
+            if (i != correct_degrees.size() - 1)
+                after.append(", ");
+        }
+        after.append(" ]");
 
-    io::print_text_with_header(
-        after, "DEBUG: Степени после корректировки (DAG)", "", BOXED, YELLOW);
+        io::print_text_with_header(after,
+                                   "DEBUG: Степени после корректировки (DAG)",
+                                   "", BOXED, YELLOW);
+    }
 #endif
 
     generate_DAG_from_degrees(correct_degrees);
@@ -1254,4 +1414,123 @@ vector<int> graph::chromatic_coloring(const matrix &adj_matrix,
 
     chromatic_number = size;
     return colors;
+}
+
+bool graph::is_eulerian() const {
+    return is_connected_graph(adj) && odd_vertices(adj).empty();
+}
+
+euler_result graph::build_eulerian_cycle() {
+    euler_result result;
+    result.connected = is_connected_graph(adj);
+
+    if (!result.connected) {
+        result.log = "Граф несвязный: эйлеров цикл построить нельзя";
+        return result;
+    }
+
+    int start = first_vertex_with_edges(adj);
+    if (start == -1) {
+        result.was_eulerian = true;
+        result.cycle.push_back(0);
+        result.log = "В графе нет ребер: эйлеров цикл вырожден в вершину 0";
+        return result;
+    }
+
+    result.was_eulerian = odd_vertices(adj).empty();
+    make_degrees_even(adj, result.duplicated_edges);
+    result.cycle = euler_cycle_by_stack(adj, start);
+
+    if (result.was_eulerian)
+        result.log = "Все вершины имеют четные степени: граф эйлеров";
+    else
+        result.log = "Граф не был эйлеровым: продублированы пути между "
+                     "нечетными вершинами";
+
+    return result;
+}
+
+vector<fundamental_cycle>
+graph::build_fundamental_cycles(const matrix &tree_adj,
+                                const matrix &tree_weights) const {
+    vector<fundamental_cycle> cycles;
+    const int size = static_cast<int>(n);
+
+    for (int from = 0; from < size; from++) {
+        for (int to = from + 1; to < size; to++) {
+            if (adj.at(from, to) == 0 || tree_adj.at(from, to) != 0)
+                continue;
+
+            vector<int> parent(size, -1);
+            queue<int> q;
+            parent[from] = from;
+            q.push(from);
+
+            while (!q.empty() && parent[to] == -1) {
+                int v = q.front();
+                q.pop();
+
+                for (int u = 0; u < size; u++) {
+                    if (parent[u] != -1 || tree_adj.at(v, u) == 0)
+                        continue;
+                    parent[u] = v;
+                    q.push(u);
+                }
+            }
+
+            if (parent[to] == -1)
+                continue;
+
+            vector<int> path;
+            for (int v = to; v != from; v = parent[v])
+                path.push_back(v);
+            path.push_back(from);
+            std::reverse(path.begin(), path.end());
+
+            fundamental_cycle cycle;
+            cycle.chord_from = from;
+            cycle.chord_to = to;
+
+            for (size_t i = 1; i < path.size(); i++) {
+                int u = path[i - 1];
+                int v = path[i];
+                cycle.edges.push_back(
+                    {u, v, matrix_edge_weight(tree_weights, u, v)});
+            }
+
+            cycle.edges.push_back(
+                {from, to, matrix_edge_weight(weights, from, to)});
+            cycles.push_back(cycle);
+        }
+    }
+
+    return cycles;
+}
+
+vector<weighted_edge>
+graph::symmetric_difference_cycles(const vector<fundamental_cycle> &cycles,
+                                   const vector<int> &selected_indices) const {
+    std::map<pair<int, int>, weighted_edge> selected_edges;
+
+    for (int cycle_idx : selected_indices) {
+        if (cycle_idx < 0 || cycle_idx >= static_cast<int>(cycles.size()))
+            continue;
+
+        for (const weighted_edge &edge : cycles[cycle_idx].edges) {
+            pair<int, int> key = normalized_edge(edge.from, edge.to);
+            auto it = selected_edges.find(key);
+
+            if (it == selected_edges.end()) {
+                selected_edges[key] = {key.first, key.second, edge.weight};
+            } else {
+                selected_edges.erase(it);
+            }
+        }
+    }
+
+    vector<weighted_edge> result;
+    for (const auto &item : selected_edges)
+        result.push_back(item.second);
+
+    return result;
 }

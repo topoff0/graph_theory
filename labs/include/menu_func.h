@@ -4,7 +4,6 @@ struct menu_func {
     };
 
     struct StartWorkMenu {
-        static void generate_graph();
         static void generate_acyclic_oriented_graph();
         static void generate_weights_matrix();
         static void generate_throughputs_matrix();
@@ -24,6 +23,9 @@ struct menu_func {
         static void count_spanning_trees_kirchhoff();
         static void build_mst_kruskal_and_prufer();
         static void min_coloring_for_graph_or_mst();
+        static void build_eulerian_cycle();
+        static void fundamental_cycles_and_symmetric_difference();
+        static void check_eulerian_graphs_theorem();
     };
 
     static void back_to_main_menu(bool &back);

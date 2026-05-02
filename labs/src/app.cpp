@@ -59,64 +59,70 @@ void app::handle_start_work_menu(int choice) {
         _running = false;
         break;
     case 1:
-        menu_func::StartWorkMenu::generate_graph();
-        break;
-    case 2:
         menu_func::StartWorkMenu::generate_acyclic_oriented_graph();
         break;
-    case 3:
+    case 2:
         menu_func::StartWorkMenu::generate_weights_matrix();
         break;
-    case 4:
+    case 3:
         menu_func::StartWorkMenu::generate_throughputs_matrix();
         break;
-    case 5:
+    case 4:
         menu_func::StartWorkMenu::generate_costs_matrix();
         break;
-    case 6:
+    case 5:
         menu_func::StartWorkMenu::make_graph_tree();
         break;
-    case 7:
+    case 6:
         menu_func::StartWorkMenu::make_graph_oriented();
         break;
-    case 8:
+    case 7:
         menu_func::StartWorkMenu::make_graph_not_oriented();
         break;
-    case 9:
+    case 8:
         menu_func::StartWorkMenu::calc_eccentricities();
         break;
-    case 10:
+    case 9:
         menu_func::StartWorkMenu::calc_centers();
         break;
-    case 11:
+    case 10:
         menu_func::StartWorkMenu::calc_diameter();
         break;
-    case 12:
+    case 11:
         menu_func::StartWorkMenu::run_shimbell_method();
         break;
-    case 13:
+    case 12:
         menu_func::StartWorkMenu::check_routes();
         break;
-    case 14:
+    case 13:
         menu_func::StartWorkMenu::edges_bfs();
         break;
-    case 15:
+    case 14:
         menu_func::StartWorkMenu::shortest_path_bellman_ford();
         break;
-    case 16:
+    case 15:
         menu_func::StartWorkMenu::find_max_flow();
         break;
-    case 17:
+    case 16:
         menu_func::StartWorkMenu::find_min_cost_flow();
         break;
-    case 18:
+    case 17:
         menu_func::StartWorkMenu::count_spanning_trees_kirchhoff();
         break;
-    case 19:
+    case 18:
         menu_func::StartWorkMenu::build_mst_kruskal_and_prufer();
         break;
-    case 20:
+    case 19:
         menu_func::StartWorkMenu::min_coloring_for_graph_or_mst();
+        break;
+    case 20:
+        menu_func::StartWorkMenu::build_eulerian_cycle();
+        break;
+    case 21:
+        menu_func::StartWorkMenu::fundamental_cycles_and_symmetric_difference();
+        break;
+    case 22:
+        menu_func::StartWorkMenu::check_eulerian_graphs_theorem();
         break;
     default:
         break;
