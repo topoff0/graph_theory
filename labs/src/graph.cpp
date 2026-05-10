@@ -146,54 +146,102 @@ bool is_connected_graph(const matrix &adj) {
     return true;
 }
 
-vector<int> path_between_vertices(const matrix &adj, int from, int to) {
-    const int size = static_cast<int>(adj.get_rows());
-    vector<int> parent(size, -1);
-    queue<int> q;
+bool can_remove_edge_preserving_connected(const matrix &adj, int from, int to) {
+    matrix changed = adj;
+    changed.at(from, to) = 0;
+    changed.at(to, from) = 0;
+    return is_connected_graph(changed);
+}
 
-    parent[from] = from;
-    q.push(from);
+void add_simple_edge(matrix &adj, int from, int to,
+                     vector<pair<int, int>> &added_edges) {
+    adj.at(from, to) = 1;
+    adj.at(to, from) = 1;
+    added_edges.push_back(normalized_edge(from, to));
+}
 
-    while (!q.empty() && parent[to] == -1) {
-        int v = q.front();
-        q.pop();
+void remove_simple_edge(matrix &adj, int from, int to,
+                        vector<pair<int, int>> &removed_edges) {
+    adj.at(from, to) = 0;
+    adj.at(to, from) = 0;
+    removed_edges.push_back(normalized_edge(from, to));
+}
 
-        for (int u = 0; u < size; u++) {
-            if (parent[u] != -1 || adj.at(v, u) == 0)
-                continue;
-            parent[u] = v;
-            q.push(u);
+bool try_make_degrees_even_simple(matrix &adj,
+                                  vector<pair<int, int>> &added_edges,
+                                  vector<pair<int, int>> &removed_edges) {
+    while (true) {
+        vector<int> odd = odd_vertices(adj);
+        if (odd.empty())
+            return true;
+
+        bool changed = false;
+        for (size_t i = 0; i < odd.size() && !changed; i++) {
+            for (size_t j = i + 1; j < odd.size(); j++) {
+                int from = odd[i];
+                int to = odd[j];
+                if (adj.at(from, to) != 0)
+                    continue;
+
+                add_simple_edge(adj, from, to, added_edges);
+                changed = true;
+                break;
+            }
         }
+
+        if (changed)
+            continue;
+
+        for (size_t i = 0; i < odd.size() && !changed; i++) {
+            for (size_t j = i + 1; j < odd.size(); j++) {
+                int from = odd[i];
+                int to = odd[j];
+                if (adj.at(from, to) == 0 ||
+                    !can_remove_edge_preserving_connected(adj, from, to))
+                    continue;
+
+                remove_simple_edge(adj, from, to, removed_edges);
+                changed = true;
+                break;
+            }
+        }
+
+        if (!changed)
+            return false;
     }
-
-    if (parent[to] == -1)
-        return {};
-
-    vector<int> path;
-    for (int v = to; v != from; v = parent[v])
-        path.push_back(v);
-    path.push_back(from);
-    std::reverse(path.begin(), path.end());
-    return path;
 }
 
-void duplicate_path(matrix &adj, const vector<int> &path,
-                    vector<pair<int, int>> &duplicated_edges) {
-    for (size_t i = 1; i < path.size(); i++) {
-        int u = path[i - 1];
-        int v = path[i];
-        adj.at(u, v) += 1;
-        adj.at(v, u) += 1;
-        duplicated_edges.push_back(normalized_edge(u, v));
+matrix build_simple_eulerian_cycle_adj(int size) {
+    matrix cycle_adj(size, size);
+    if (size < 3)
+        return cycle_adj;
+
+    for (int v = 0; v < size; v++) {
+        int u = (v + 1) % size;
+        cycle_adj.at(v, u) = 1;
+        cycle_adj.at(u, v) = 1;
     }
+
+    return cycle_adj;
 }
 
-void make_degrees_even(matrix &adj, vector<pair<int, int>> &duplicated_edges) {
-    vector<int> odd = odd_vertices(adj);
+void collect_edge_diff(const matrix &before, const matrix &after,
+                       vector<pair<int, int>> &added_edges,
+                       vector<pair<int, int>> &removed_edges) {
+    const int size = static_cast<int>(before.get_rows());
+    added_edges.clear();
+    removed_edges.clear();
 
-    for (size_t i = 0; i + 1 < odd.size(); i += 2) {
-        vector<int> path = path_between_vertices(adj, odd[i], odd[i + 1]);
-        duplicate_path(adj, path, duplicated_edges);
+    for (int from = 0; from < size; from++) {
+        for (int to = from + 1; to < size; to++) {
+            bool had_edge = before.at(from, to) != 0;
+            bool has_edge = after.at(from, to) != 0;
+
+            if (!had_edge && has_edge)
+                added_edges.push_back({from, to});
+            else if (had_edge && !has_edge)
+                removed_edges.push_back({from, to});
+        }
     }
 }
 
@@ -838,8 +886,11 @@ matrix graph::run_shimbell(size_t edges, bool find_max) {
 
                 for (size_t k = 0; k < n; k++) {
 
-                    if (result.at(i, k) == INT_MAX ||
-                        exact_step_weights.at(k, j) == INT_MAX)
+                    if (exact_step_weights.at(k, j) == INT_MAX)
+                        continue;
+
+                    if ((!find_max && result.at(i, k) == INT_MAX) ||
+                        (find_max && result.at(i, k) == INT_MIN))
                         continue;
 
                     int value = result.at(i, k) + exact_step_weights.at(k, j);
@@ -1438,14 +1489,36 @@ euler_result graph::build_eulerian_cycle() {
     }
 
     result.was_eulerian = odd_vertices(adj).empty();
-    make_degrees_even(adj, result.duplicated_edges);
-    result.cycle = euler_cycle_by_stack(adj, start);
+    if (!result.was_eulerian) {
+        matrix original_adj = adj;
+        matrix changed_adj = adj;
+        vector<pair<int, int>> added_edges;
+        vector<pair<int, int>> removed_edges;
+
+        if (try_make_degrees_even_simple(changed_adj, added_edges,
+                                         removed_edges) &&
+            is_connected_graph(changed_adj)) {
+            adj = changed_adj;
+            result.added_edges = added_edges;
+            result.removed_edges = removed_edges;
+        } else {
+            adj = build_simple_eulerian_cycle_adj(static_cast<int>(n));
+            collect_edge_diff(original_adj, adj, result.added_edges,
+                              result.removed_edges);
+        }
+    }
+
+    start = first_vertex_with_edges(adj);
+    if (start == -1)
+        result.cycle.push_back(0);
+    else
+        result.cycle = euler_cycle_by_stack(adj, start);
 
     if (result.was_eulerian)
         result.log = "Все вершины имеют четные степени: граф эйлеров";
     else
-        result.log = "Граф не был эйлеровым: продублированы пути между "
-                     "нечетными вершинами";
+        result.log =
+            "Граф приведен к эйлерову: изменены ребра для четности степеней";
 
     return result;
 }

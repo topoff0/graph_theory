@@ -35,7 +35,8 @@ struct prufer_item {
 struct euler_result {
     bool connected = false;
     bool was_eulerian = false;
-    vector<pair<int, int>> duplicated_edges;
+    vector<pair<int, int>> added_edges;
+    vector<pair<int, int>> removed_edges;
     vector<int> cycle;
     string log;
 };

@@ -7,7 +7,7 @@ bool app::_running = true;
 bool app::_back = false;
 
 void app::run() {
-    io::print_header("Лабораторная работа №1. Теория графов.",
+    io::print_header("Лабораторные работы №1-5. Теория графов.",
                      HEADER_STYLE::SIMPLE, CYAN);
     io::v_space(1);
 

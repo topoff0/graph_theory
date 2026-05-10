@@ -32,7 +32,7 @@ void clear_cached_min_ost() {
 string edge_list_to_string(const vector<weighted_edge> &edges,
                            bool show_weight = true) {
     if (edges.empty())
-        return "{ }";
+        return "∅";
 
     std::ostringstream text;
     text << "{ ";
@@ -87,15 +87,11 @@ vector<int> parse_cycle_indices(string input, int max_index) {
 
     std::istringstream stream(input);
     vector<int> indices;
-    vector<bool> used(max_index, false);
     int value = 0;
 
     while (stream >> value) {
         if (value < 1 || value > max_index)
             continue;
-        if (used[value - 1])
-            continue;
-        used[value - 1] = true;
         indices.push_back(value - 1);
     }
 
@@ -888,15 +884,17 @@ void menu_func::StartWorkMenu::build_eulerian_cycle() {
         return;
     }
 
-    if (!result.duplicated_edges.empty())
+    if (!result.added_edges.empty() || !result.removed_edges.empty())
         clear_cached_min_ost();
 
     std::ostringstream text;
     text << (result.was_eulerian ? "Граф был эйлеровым"
                                  : "Граф не был эйлеровым")
          << "\n" << result.log
-         << "\nПродублированные ребра: "
-         << pair_list_to_string(result.duplicated_edges)
+         << "\nДобавленные ребра: "
+         << pair_list_to_string(result.added_edges)
+         << "\nУдаленные ребра: "
+         << pair_list_to_string(result.removed_edges)
          << "\nЭйлеров цикл: " << vertex_route_to_string(result.cycle);
 
     io::print_text_with_header(text.str(), "Лабораторная 5: эйлеров цикл", "",
