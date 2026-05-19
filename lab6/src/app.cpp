@@ -1,5 +1,6 @@
 #include "app.h"
 #include "colors.h"
+#include "config.h"
 #include "io.h"
 #include "menu_.h"
 #include "menu_item.h"
@@ -36,7 +37,8 @@ void print_info(const string &header, const string &message) {
 }
 
 string find_files_directory() {
-    const vector<string> candidates = {"files", "../files"};
+    const vector<string> candidates = {FILES_DIRECTORY_NAME,
+                                       FILES_PARENT_DIRECTORY};
 
     for (const string &candidate : candidates) {
         error_code error;
@@ -85,13 +87,15 @@ string read_file_path() {
 
     string directory = find_files_directory();
     if (directory.empty()) {
-        io::print_error("Директория files не найдена");
+        io::print_error("Директория " + string(FILES_DIRECTORY_NAME) +
+                        " не найдена");
         return io::read_string("Введите путь к текстовому файлу");
     }
 
     vector<fs::path> files = collect_files(directory);
     if (files.empty()) {
-        io::print_error("В директории files нет файлов");
+        io::print_error("В директории " + string(FILES_DIRECTORY_NAME) +
+                        " нет файлов");
         return io::read_string("Введите путь к текстовому файлу");
     }
 
@@ -254,7 +258,9 @@ void app::handle_tree_menu(int choice) {
         print_tree_stats(_tree_dictionary);
         break;
     case 6: {
-        int limit = io::read_number({1, 100000}, "Сколько слов вывести");
+        int limit = io::read_number(
+            {WORD_OUTPUT_MIN_LIMIT, WORD_OUTPUT_MAX_LIMIT},
+            "Сколько слов вывести");
         ostringstream text;
         _tree_dictionary.print(text, limit);
         io::print_preformatted_with_header(text.str(), "Слова дерева", CYAN);
@@ -336,7 +342,9 @@ void app::handle_hash_menu(int choice) {
         print_hash_stats(_hash_dictionary);
         break;
     case 6: {
-        int limit = io::read_number({1, 100000}, "Сколько слов вывести");
+        int limit = io::read_number(
+            {WORD_OUTPUT_MIN_LIMIT, WORD_OUTPUT_MAX_LIMIT},
+            "Сколько слов вывести");
         ostringstream text;
         _hash_dictionary.print(text, limit);
         io::print_preformatted_with_header(text.str(), "Слова хеш-таблицы",

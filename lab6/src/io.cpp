@@ -3,12 +3,11 @@
 #include "format.h"
 
 #include <iostream>
-#include <limits>
 #include <stdexcept>
 
 using namespace std;
 
-const string io::reset_color = "\033[0m";
+const string io::reset_color = ANSI_RESET_COLOR;
 
 namespace {
 
@@ -20,12 +19,13 @@ int count_visible_chars_with_ansi(const string &s) {
         unsigned char c = static_cast<unsigned char>(s[i]);
 
         if (in_escape) {
-            if (c >= '@' && c <= '~')
+            if (c >= ANSI_SEQUENCE_FINAL_MIN && c <= ANSI_SEQUENCE_FINAL_MAX)
                 in_escape = false;
             continue;
         }
 
-        if (c == '\033' && i + 1 < s.size() && s[i + 1] == '[') {
+        if (c == ANSI_ESCAPE_CHAR && i + 1 < s.size() &&
+            s[i + 1] == ANSI_ESCAPE_START) {
             in_escape = true;
             ++i;
             continue;
@@ -50,25 +50,25 @@ string io::get_border(const int width, const string &s) {
 const string io::get_color_code(COLOR clr) {
     switch (clr) {
     case COLOR::GREEN:
-        return "\033[32m";
+        return ANSI_GREEN_COLOR;
     case COLOR::YELLOW:
-        return "\033[33m";
+        return ANSI_YELLOW_COLOR;
     case COLOR::BLUE:
-        return "\033[34m";
+        return ANSI_BLUE_COLOR;
     case COLOR::RED:
-        return "\033[31m";
+        return ANSI_RED_COLOR;
     case COLOR::PURPLE:
-        return "\033[35m";
+        return ANSI_PURPLE_COLOR;
     case COLOR::CYAN:
-        return "\033[36m";
+        return ANSI_CYAN_COLOR;
     default:
-        return "\033[0m";
+        return ANSI_RESET_COLOR;
     }
 }
 
 void io::print_simple_header(const string &s, const string &main_color) {
     int len = format::count_visible_chars(s);
-    int width = max(UI_HEADER_LENGTH, len + 12);
+    int width = max(UI_HEADER_LENGTH, len + UI_HEADER_EXTRA_WIDTH);
     int padding_left = (width - len) / 2;
     int padding_right = width - len - padding_left;
     string border = get_border(width, "─");
@@ -82,7 +82,7 @@ void io::print_simple_header(const string &s, const string &main_color) {
 
 void io::print_boxed_header(const string &s, const string &main_color) {
     int len = format::count_visible_chars(s);
-    int width = max(UI_HEADER_LENGTH, len + 12);
+    int width = max(UI_HEADER_LENGTH, len + UI_HEADER_EXTRA_WIDTH);
     int padding_left = (width - len) / 2;
     int padding_right = width - len - padding_left;
     string border = get_border(width, "─");
@@ -96,7 +96,7 @@ void io::print_boxed_header(const string &s, const string &main_color) {
 
 void io::print_bold_header(const string &s, const string &main_color) {
     int len = format::count_visible_chars(s);
-    int width = max(UI_HEADER_LENGTH, len + 12);
+    int width = max(UI_HEADER_LENGTH, len + UI_HEADER_EXTRA_WIDTH);
     int padding_left = (width - len) / 2;
     int padding_right = width - len - padding_left;
     string border = get_border(width, "═");
@@ -141,7 +141,8 @@ void io::print_list(const vector<pair<string, COLOR>> &items,
     int width = UI_MENU_LENGTH > len ? UI_MENU_LENGTH : len + 2;
 
     for (const auto &item : items) {
-        int visible_len = format::count_visible_chars(item.first) + 10;
+        int visible_len =
+            format::count_visible_chars(item.first) + UI_MENU_ITEM_EXTRA_WIDTH;
         if (visible_len > width)
             width = visible_len;
     }
@@ -176,7 +177,8 @@ void io::print_command_menu(const vector<menu_item> &items,
                             const string &header) {
     int width = UI_MENU_LENGTH;
     for (const auto &item : items) {
-        int visible_len = format::count_visible_chars(item.title) + 10;
+        int visible_len =
+            format::count_visible_chars(item.title) + UI_MENU_ITEM_EXTRA_WIDTH;
         if (visible_len > width)
             width = visible_len;
     }
@@ -240,7 +242,7 @@ void io::print_command_menu(const vector<menu_item> &items,
 
 void io::print_retry(const string &s, COLOR clr) {
     int len = format::count_visible_chars(s);
-    int width = max(UI_HEADER_LENGTH, len + 12);
+    int width = max(UI_HEADER_LENGTH, len + UI_HEADER_EXTRA_WIDTH);
     int padding_left = (width - len) / 2;
     int padding_right = width - len - padding_left;
 
@@ -258,7 +260,8 @@ void io::print_text_with_header(const string &text, const string &header,
     auto cyan = get_color_code(CYAN);
     auto text_color = get_color_code(clr);
 
-    vector<string> lines = format::split_text(text, width - 4);
+    vector<string> lines =
+        format::split_text(text, width - UI_TEXT_HORIZONTAL_PADDING);
 
     string border = get_border(width, "─");
 
@@ -285,8 +288,9 @@ void io::print_text_with_header(const string &text, const string &header,
         cout << "├" << border << "┤" << endl;
         string total_link = "Подробнее: " + link;
         int total_link_len = format::count_visible_chars(total_link);
-        cout << "│" << string(4, ' ') << total_link
-             << string(width - 4 - total_link_len, ' ') << "│" << endl;
+        cout << "│" << string(UI_LINK_LEFT_PADDING, ' ') << total_link
+             << string(width - UI_LINK_LEFT_PADDING - total_link_len, ' ')
+             << "│" << endl;
     }
 
     cout << "╰" << border << "╯" << endl;
@@ -307,9 +311,11 @@ void io::print_preformatted_with_header(const string &text,
         start = pos + 1;
     }
 
-    int width = max(UI_HEADER_LENGTH, format::count_visible_chars(header) + 12);
+    int width = max(UI_HEADER_LENGTH,
+                    format::count_visible_chars(header) + UI_HEADER_EXTRA_WIDTH);
     for (const auto &line : lines) {
-        int line_width = count_visible_chars_with_ansi(line) + 4;
+        int line_width =
+            count_visible_chars_with_ansi(line) + UI_TEXT_HORIZONTAL_PADDING;
         if (line_width > width)
             width = line_width;
     }
@@ -338,7 +344,8 @@ void io::print_preformatted_with_header(const string &text,
 
 void io::print_error(const string &message, COLOR clr) {
     int len = format::count_visible_chars(ERROR_WORD);
-    int width = max(UI_HEADER_LENGTH, len + 12) - 2;
+    int width = max(UI_HEADER_LENGTH, len + UI_HEADER_EXTRA_WIDTH) -
+                UI_BORDER_WIDTH_ADJUSTMENT;
     int padding_left = (width - len) / 2;
     int padding_right = width - len - padding_left;
 
@@ -348,12 +355,14 @@ void io::print_error(const string &message, COLOR clr) {
     cout << left_line << ERROR_WORD << right_line << endl;
 
     int msg_len = format::count_visible_chars(message);
-    int msg_width = max(UI_HEADER_LENGTH, msg_len + 8);
+    int msg_width = max(UI_HEADER_LENGTH, msg_len + UI_MESSAGE_EXTRA_WIDTH);
     int msg_padding_left = (msg_width - msg_len) / 2;
     int msg_padding_right = msg_width - msg_len - msg_padding_left;
 
-    string msg_left_line = get_border(msg_padding_left - 2, "─");
-    string msg_right_line = get_border(msg_padding_right - 2, "─");
+    string msg_left_line =
+        get_border(msg_padding_left - UI_BORDER_WIDTH_ADJUSTMENT, "─");
+    string msg_right_line =
+        get_border(msg_padding_right - UI_BORDER_WIDTH_ADJUSTMENT, "─");
 
     cout << get_color_code(clr);
     string border = get_border(msg_width, "─");
@@ -372,7 +381,8 @@ int io::read_number(const pair<int, int> &min_max_id, const string &header) {
 
     while (true) {
         int len = format::count_visible_chars(header);
-        int width = max(UI_HEADER_LENGTH, len + 12) - 2;
+        int width = max(UI_HEADER_LENGTH, len + UI_HEADER_EXTRA_WIDTH) -
+                    UI_BORDER_WIDTH_ADJUSTMENT;
         int padding_left = (width - len) / 2;
         int padding_right = width - len - padding_left;
 
@@ -413,7 +423,8 @@ int io::read_number(const pair<int, int> &min_max_id, const string &header) {
 string io::read_string(const string &header) {
     while (true) {
         int len = format::count_visible_chars(header);
-        int width = max(UI_HEADER_LENGTH, len + 12) - 2;
+        int width = max(UI_HEADER_LENGTH, len + UI_HEADER_EXTRA_WIDTH) -
+                    UI_BORDER_WIDTH_ADJUSTMENT;
         int padding_left = (width - len) / 2;
         int padding_right = width - len - padding_left;
 

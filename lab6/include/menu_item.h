@@ -59,5 +59,5 @@ static const vector<menu_item> HASH_DICTIONARY_MENU = {
     {0, "Завершить работу", RED}};
 
 static const vector<menu_item> FILE_SOURCE_MENU = {
-    {1, "Выбрать файл из директории files", GREEN},
+    {1, "Выбрать файл из директории ", GREEN},
     {2, "Ввести путь к файлу вручную", BASE}};
