@@ -182,9 +182,6 @@ void HashDictionary::print(ostream &out, int limit) const {
 }
 
 void HashDictionary::print_table(ostream &out) const {
-    out << "Формат элемента: слово(количество)\n";
-    out << "Коллизии показаны цепочкой через ->\n\n";
-
     for (size_t i = 0; i < _capacity; ++i) {
         out << "[" << i << "] ";
 

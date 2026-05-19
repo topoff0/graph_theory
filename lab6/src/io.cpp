@@ -310,6 +310,8 @@ void io::print_preformatted_with_header(const string &text,
         lines.push_back(text.substr(start, pos - start));
         start = pos + 1;
     }
+    if (!lines.empty() && lines.back().empty())
+        lines.pop_back();
 
     int width = max(UI_HEADER_LENGTH,
                     format::count_visible_chars(header) + UI_HEADER_EXTRA_WIDTH);
@@ -333,7 +335,7 @@ void io::print_preformatted_with_header(const string &text,
 
     for (const auto &line : lines) {
         int line_len = count_visible_chars_with_ansi(line);
-        int right_padding = width - line_len - 2;
+        int right_padding = width - line_len - UI_PREFORMATTED_LEFT_PADDING;
         cout << "│ " << get_color_code(clr) << line << get_color_code(CYAN)
              << string(right_padding, ' ') << "│" << endl;
     }
