@@ -241,14 +241,14 @@ void RedBlackTreeDictionary::print_in_order(Node *node, ostream &out,
 void RedBlackTreeDictionary::print_tree(Node *node, ostream &out,
                                         const string &prefix, bool is_left,
                                         bool is_root) const {
-    if (node == nullptr)
+    if (node == nullptr) {
+        out << prefix << (is_left ? "└── " : "┌── ") << TREE_BLACK_COLOR
+            << " [B]" << TREE_RESET_COLOR << "\n";
         return;
-
-    if (node->right != nullptr) {
-        string next_prefix =
-            is_root ? "" : prefix + (is_left ? "│   " : "    ");
-        print_tree(node->right, out, next_prefix, false, false);
     }
+
+    string right_prefix = is_root ? "" : prefix + (is_left ? "│   " : "    ");
+    print_tree(node->right, out, right_prefix, false, false);
 
     out << prefix;
     if (is_root)
@@ -261,11 +261,8 @@ void RedBlackTreeDictionary::print_tree(Node *node, ostream &out,
     out << node_color << node->word << " [" << node->count << ", "
         << (node->color == RED ? "R" : "B") << "]" << TREE_RESET_COLOR << "\n";
 
-    if (node->left != nullptr) {
-        string next_prefix =
-            is_root ? "" : prefix + (is_left ? "    " : "│   ");
-        print_tree(node->left, out, next_prefix, true, false);
-    }
+    string left_prefix = is_root ? "" : prefix + (is_left ? "    " : "│   ");
+    print_tree(node->left, out, left_prefix, true, false);
 }
 
 bool RedBlackTreeDictionary::insert(const string &raw_word) {
