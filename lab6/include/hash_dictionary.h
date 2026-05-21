@@ -18,16 +18,16 @@ class HashDictionary {
         explicit Entry(const string &value);
     };
 
-    Entry **_buckets;
+    Entry **_cells;
     size_t _capacity;
     size_t _unique_words;
     size_t _total_words;
 
     static unsigned long long hash_value(const string &word);
 
-    size_t bucket_index(const string &word) const;
-    void init_buckets(size_t capacity);
-    void destroy_buckets();
+    size_t cell_index(const string &word) const;
+    void init_cells(size_t capacity);
+    void destroy_cells();
     void rehash(size_t new_capacity);
 
   public:
@@ -49,6 +49,6 @@ class HashDictionary {
     size_t unique_words() const;
     size_t total_words() const;
     size_t capacity() const;
-    size_t collision_buckets() const;
+    size_t collision_cells() const;
     size_t max_chain_length() const;
 };

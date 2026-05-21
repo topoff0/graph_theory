@@ -9,11 +9,11 @@ HashDictionary::Entry::Entry(const string &value)
     : word(value), count(1), next(nullptr) {}
 
 HashDictionary::HashDictionary()
-    : _buckets(nullptr), _capacity(0), _unique_words(0), _total_words(0) {
-    init_buckets(HASH_INITIAL_CAPACITY);
+    : _cells(nullptr), _capacity(0), _unique_words(0), _total_words(0) {
+    init_cells(HASH_INITIAL_CAPACITY);
 }
 
-HashDictionary::~HashDictionary() { destroy_buckets(); }
+HashDictionary::~HashDictionary() { destroy_cells(); }
 
 unsigned long long HashDictionary::hash_value(const string &word) {
     unsigned long long hash = 0;
@@ -23,23 +23,23 @@ unsigned long long HashDictionary::hash_value(const string &word) {
     return hash;
 }
 
-size_t HashDictionary::bucket_index(const string &word) const {
+size_t HashDictionary::cell_index(const string &word) const {
     return static_cast<size_t>(hash_value(word) % _capacity);
 }
 
-void HashDictionary::init_buckets(size_t capacity) {
+void HashDictionary::init_cells(size_t capacity) {
     _capacity = capacity;
-    _buckets = new Entry *[_capacity];
+    _cells = new Entry *[_capacity];
     for (size_t i = 0; i < _capacity; ++i)
-        _buckets[i] = nullptr;
+        _cells[i] = nullptr;
 }
 
-void HashDictionary::destroy_buckets() {
-    if (_buckets == nullptr)
+void HashDictionary::destroy_cells() {
+    if (_cells == nullptr)
         return;
 
     for (size_t i = 0; i < _capacity; ++i) {
-        Entry *current = _buckets[i];
+        Entry *current = _cells[i];
         while (current != nullptr) {
             Entry *next = current->next;
             delete current;
@@ -47,33 +47,33 @@ void HashDictionary::destroy_buckets() {
         }
     }
 
-    delete[] _buckets;
-    _buckets = nullptr;
+    delete[] _cells;
+    _cells = nullptr;
     _capacity = 0;
     _unique_words = 0;
     _total_words = 0;
 }
 
 void HashDictionary::rehash(size_t new_capacity) {
-    Entry **old_buckets = _buckets;
+    Entry **old_cells = _cells;
     size_t old_capacity = _capacity;
 
-    init_buckets(new_capacity);
+    init_cells(new_capacity);
     _unique_words = 0;
 
     for (size_t i = 0; i < old_capacity; ++i) {
-        Entry *current = old_buckets[i];
+        Entry *current = old_cells[i];
         while (current != nullptr) {
             Entry *next = current->next;
-            size_t index = bucket_index(current->word);
-            current->next = _buckets[index];
-            _buckets[index] = current;
+            size_t index = cell_index(current->word);
+            current->next = _cells[index];
+            _cells[index] = current;
             ++_unique_words;
             current = next;
         }
     }
 
-    delete[] old_buckets;
+    delete[] old_cells;
 }
 
 bool HashDictionary::insert(const string &raw_word) {
@@ -81,8 +81,8 @@ bool HashDictionary::insert(const string &raw_word) {
     if (word.empty())
         return false;
 
-    size_t index = bucket_index(word);
-    Entry *current = _buckets[index];
+    size_t index = cell_index(word);
+    Entry *current = _cells[index];
     while (current != nullptr) {
         if (current->word == word) {
             ++current->count;
@@ -93,13 +93,13 @@ bool HashDictionary::insert(const string &raw_word) {
     }
 
     Entry *entry = new Entry(word);
-    entry->next = _buckets[index];
-    _buckets[index] = entry;
+    entry->next = _cells[index];
+    _cells[index] = entry;
     ++_unique_words;
     ++_total_words;
 
-    if (_unique_words * HASH_LOAD_LIMIT_DENOMINATOR >
-        _capacity * HASH_LOAD_LIMIT_NUMERATOR)
+    if (_unique_words * HASH_LOAD_LIMIT_D >
+        _capacity * HASH_LOAD_LIMIT_N)
         rehash(_capacity * HASH_GROWTH_FACTOR);
 
     return true;
@@ -107,14 +107,14 @@ bool HashDictionary::insert(const string &raw_word) {
 
 bool HashDictionary::erase(const string &raw_word) {
     string word = text_utils::normalize_word(raw_word);
-    size_t index = bucket_index(word);
-    Entry *current = _buckets[index];
+    size_t index = cell_index(word);
+    Entry *current = _cells[index];
     Entry *previous = nullptr;
 
     while (current != nullptr) {
         if (current->word == word) {
             if (previous == nullptr)
-                _buckets[index] = current->next;
+                _cells[index] = current->next;
             else
                 previous->next = current->next;
 
@@ -136,8 +136,8 @@ bool HashDictionary::contains(const string &word) const {
 
 int HashDictionary::count(const string &raw_word) const {
     string word = text_utils::normalize_word(raw_word);
-    size_t index = bucket_index(word);
-    Entry *current = _buckets[index];
+    size_t index = cell_index(word);
+    Entry *current = _cells[index];
 
     while (current != nullptr) {
         if (current->word == word)
@@ -149,8 +149,8 @@ int HashDictionary::count(const string &raw_word) const {
 }
 
 void HashDictionary::clear() {
-    destroy_buckets();
-    init_buckets(HASH_INITIAL_CAPACITY);
+    destroy_cells();
+    init_cells(HASH_INITIAL_CAPACITY);
 }
 
 namespace {
@@ -172,7 +172,7 @@ void HashDictionary::print(ostream &out, int limit) const {
 
     int printed = 0;
     for (size_t i = 0; i < _capacity && printed < limit; ++i) {
-        Entry *current = _buckets[i];
+        Entry *current = _cells[i];
         while (current != nullptr && printed < limit) {
             out << current->word << " (" << current->count << ")\n";
             ++printed;
@@ -185,7 +185,7 @@ void HashDictionary::print_table(ostream &out) const {
     for (size_t i = 0; i < _capacity; ++i) {
         out << "[" << i << "] ";
 
-        Entry *current = _buckets[i];
+        Entry *current = _cells[i];
         if (current == nullptr) {
             out << "пусто\n";
             continue;
@@ -207,10 +207,10 @@ size_t HashDictionary::total_words() const { return _total_words; }
 
 size_t HashDictionary::capacity() const { return _capacity; }
 
-size_t HashDictionary::collision_buckets() const {
+size_t HashDictionary::collision_cells() const {
     size_t collisions = 0;
     for (size_t i = 0; i < _capacity; ++i) {
-        if (_buckets[i] != nullptr && _buckets[i]->next != nullptr)
+        if (_cells[i] != nullptr && _cells[i]->next != nullptr)
             ++collisions;
     }
     return collisions;
@@ -220,7 +220,7 @@ size_t HashDictionary::max_chain_length() const {
     size_t max_length = 0;
     for (size_t i = 0; i < _capacity; ++i) {
         size_t length = 0;
-        Entry *current = _buckets[i];
+        Entry *current = _cells[i];
         while (current != nullptr) {
             ++length;
             current = current->next;

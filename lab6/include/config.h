@@ -42,8 +42,8 @@
 #define HASH_INITIAL_CAPACITY 64
 
 // Таблица расширяется, когда unique_words / capacity > 3 / 4.
-#define HASH_LOAD_LIMIT_NUMERATOR 3
-#define HASH_LOAD_LIMIT_DENOMINATOR 4
+#define HASH_LOAD_LIMIT_N 3
+#define HASH_LOAD_LIMIT_D 4
 
 #define HASH_GROWTH_FACTOR 2
 

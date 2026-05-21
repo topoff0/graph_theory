@@ -130,7 +130,7 @@ void print_hash_stats(const HashDictionary &dict) {
     text << "Уникальных слов: " << dict.unique_words() << "\n"
          << "Всего добавлений слов: " << dict.total_words() << "\n"
          << "Размер таблицы: " << dict.capacity() << "\n"
-         << "Бакетов с коллизиями: " << dict.collision_buckets() << "\n"
+         << "Ячеек с коллизиями: " << dict.collision_cells() << "\n"
          << "Максимальная длина цепочки: " << dict.max_chain_length();
     io::print_text_with_header(text.str(), "Хеш-таблица", "", BOXED, CYAN);
 }
